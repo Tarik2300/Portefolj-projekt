@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Task Board</title>
+    <link rel="stylesheet" href="css/taskboard.css">
+</head>
+
+<body>
+
+<div id="header"></div>
+
+<script>
+    fetch("components/header.html")
+        .then(r => r.text())
+        .then(html => document.getElementById("header").innerHTML = html);
+</script>
+
+<div class="board-container">
+    <div class="board-column">
+        <div class="column-header">TO-DO:</div>
+        <div class="column-content"></div>
+    </div>
+
+    <div class="board-column">
+        <div class="column-header">IN-PROGRESS:</div>
+        <div class="column-content"></div>
+    </div>
+
+    <div class="board-column">
+        <div class="column-header">DONE:</div>
+        <div class="column-content"></div>
+    </div>
+</div>
+
+</body>
+</html>
