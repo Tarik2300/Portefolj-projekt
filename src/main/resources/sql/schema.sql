@@ -1,9 +1,10 @@
--- Schema for Todo Application
+-- Schema for JTT Task Manager
 -- Database: MySQL / H2 compatible
 
 CREATE TABLE IF NOT EXISTS users (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
+    name VARCHAR(100) NOT NULL,
     password VARCHAR(255) NOT NULL,
     role VARCHAR(20) NOT NULL DEFAULT 'EMPLOYEE'
 );
@@ -12,18 +13,17 @@ CREATE TABLE IF NOT EXISTS tasks (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(100) NOT NULL,
     description TEXT,
-    status VARCHAR(20) NOT NULL DEFAULT 'TODO',
     priority VARCHAR(20) NOT NULL DEFAULT 'MEDIUM',
-    user_id BIGINT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    deadline DATE,
+    status VARCHAR(20) NOT NULL DEFAULT 'TODO',
+    assigned_to BIGINT NOT NULL,
+    FOREIGN KEY (assigned_to) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS subtasks (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    title VARCHAR(100) NOT NULL,
-    done BOOLEAN NOT NULL DEFAULT FALSE,
+    description VARCHAR(255) NOT NULL,
+    completed BOOLEAN NOT NULL DEFAULT FALSE,
     task_id BIGINT NOT NULL,
     FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
 );

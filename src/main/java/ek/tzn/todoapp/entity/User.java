@@ -16,6 +16,9 @@ public class User {
     @Column(nullable = false, unique = true, length = 50)
     private String username;
 
+    @Column(nullable = false, length = 100)
+    private String name;
+
     @Column(nullable = false)
     private String password;
 
@@ -23,14 +26,15 @@ public class User {
     @Column(nullable = false)
     private Role role = Role.EMPLOYEE;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "assignedTo", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Task> tasks = new ArrayList<>();
 
     // Constructors
     public User() {}
 
-    public User(String username, String password, Role role) {
+    public User(String username, String name, String password, Role role) {
         this.username = username;
+        this.name = name;
         this.password = password;
         this.role = role;
     }
@@ -41,6 +45,9 @@ public class User {
 
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }
+
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
