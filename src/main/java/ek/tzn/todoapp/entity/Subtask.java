@@ -10,11 +10,11 @@ public class Subtask {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 100)
-    private String title;
+    @Column(nullable = false, length = 255)
+    private String description;
 
     @Column(nullable = false)
-    private boolean done = false;
+    private boolean completed = false;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "task_id", nullable = false)
@@ -23,8 +23,8 @@ public class Subtask {
     // Constructors
     public Subtask() {}
 
-    public Subtask(String title, Task task) {
-        this.title = title;
+    public Subtask(String description, Task task) {
+        this.description = description;
         this.task = task;
     }
 
@@ -32,11 +32,11 @@ public class Subtask {
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 
-    public boolean isDone() { return done; }
-    public void setDone(boolean done) { this.done = done; }
+    public boolean isCompleted() { return completed; }
+    public void setCompleted(boolean completed) { this.completed = completed; }
 
     public Task getTask() { return task; }
     public void setTask(Task task) { this.task = task; }
