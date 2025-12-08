@@ -16,35 +16,35 @@ INSERT INTO users (username, name, password, role) VALUES
 
 -- Opgave 1: Høj prioritet, i gang (Sofie)
 INSERT INTO tasks (title, description, priority, deadline, status, assigned_to) VALUES
-('Reparation af varmepumpe', 'Kunde i Valby har problemer med varmepumpen. Kører ikke optimalt og larmer.', 'HIGH', '2024-12-10', 'IN_PROGRESS', 2);
+('Reparation af varmepumpe', 'Kunde i Valby har problemer med varmepumpen. Kører ikke optimalt og larmer.', 'HIGH', '2025-12-10', 'IN_PROGRESS', 2);
 
 -- Opgave 2: Medium prioritet, ikke startet (Lars)
 INSERT INTO tasks (title, description, priority, deadline, status, assigned_to) VALUES
-('Serviceeftersyn hos Novo', 'Årligt serviceeftersyn af ventilationsanlæg hos Novo Nordisk, bygning A3.', 'MEDIUM', '2024-12-15', 'TODO', 3);
+('Serviceeftersyn hos Novo', 'Årligt serviceeftersyn af ventilationsanlæg hos Novo Nordisk, bygning A3.', 'MEDIUM', '2025-12-15', 'TODO', 3);
 
 -- Opgave 3: Lav prioritet, færdig (Emma)
 INSERT INTO tasks (title, description, priority, deadline, status, assigned_to) VALUES
-('Opdater kundekartotek', 'Gennemgå og opdater kontaktinfo for alle erhvervskunder i Region Hovedstaden.', 'LOW', '2024-12-08', 'DONE', 4);
+('Opdater kundekartotek', 'Gennemgå og opdater kontaktinfo for alle erhvervskunder i Region Hovedstaden.', 'LOW', '2025-12-08', 'DONE', 4);
 
 -- Opgave 4: Høj prioritet, ikke startet (Sofie)
 INSERT INTO tasks (title, description, priority, deadline, status, assigned_to) VALUES
-('Akut: Vandskade hos Mærsk', 'Vandskade i kælder. Pumpe og affugtning nødvendig. Kontakt: Henrik på 40123456.', 'HIGH', '2024-12-09', 'TODO', 2);
+('Akut: Vandskade hos Mærsk', 'Vandskade i kælder. Pumpe og affugtning nødvendig. Kontakt: Henrik på 40123456.', 'HIGH', '2025-12-09', 'TODO', 2);
 
 -- Opgave 5: Medium prioritet, i gang (Lars)
 INSERT INTO tasks (title, description, priority, deadline, status, assigned_to) VALUES
-('Installation af solceller', 'Montering af 12 solcellepaneler på lager i Glostrup. Stillads bestilt.', 'MEDIUM', '2024-12-20', 'IN_PROGRESS', 3);
+('Installation af solceller', 'Montering af 12 solcellepaneler på lager i Glostrup. Stillads bestilt.', 'MEDIUM', '2025-12-20', 'IN_PROGRESS', 3);
 
 -- Opgave 6: Lav prioritet, ikke startet (Emma)
 INSERT INTO tasks (title, description, priority, deadline, status, assigned_to) VALUES
-('Bestil nye værktøjskasser', 'Indkøb af 5 nye værktøjskasser til servicebiler. Se budget i Teams.', 'LOW', '2024-12-22', 'TODO', 4);
+('Bestil nye værktøjskasser', 'Indkøb af 5 nye værktøjskasser til servicebiler. Se budget i Teams.', 'LOW', '2025-12-22', 'TODO', 4);
 
 -- Opgave 7: Medium prioritet, færdig (Sofie)
 INSERT INTO tasks (title, description, priority, deadline, status, assigned_to) VALUES
-('El-tjek i butik', 'Lovpligtigt el-tjek hos tøjbutik på Strøget. Rapport sendt til kunde.', 'MEDIUM', '2024-12-05', 'DONE', 2);
+('El-tjek i butik', 'Lovpligtigt el-tjek hos tøjbutik på Strøget. Rapport sendt til kunde.', 'MEDIUM', '2025-12-05', 'DONE', 2);
 
 -- Opgave 8: Høj prioritet, i gang (Mads - teamleder tager selv opgave)
 INSERT INTO tasks (title, description, priority, deadline, status, assigned_to) VALUES
-('Tilbudsgivning: DSB kontrakt', 'Udarbejd tilbud på 2-årig serviceaftale med DSB. Deadline for indsendelse.', 'HIGH', '2024-12-12', 'IN_PROGRESS', 1);
+('Tilbudsgivning: DSB kontrakt', 'Udarbejd tilbud på 2-årig serviceaftale med DSB. Deadline for indsendelse.', 'HIGH', '2025-12-12', 'IN_PROGRESS', 1);
 
 -- =====================
 -- SUBTASKS
