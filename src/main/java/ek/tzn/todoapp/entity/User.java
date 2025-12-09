@@ -1,12 +1,15 @@
 package ek.tzn.todoapp.entity;
 
 import ek.tzn.todoapp.entity.enums.Role;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "users")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class User {
 
     @Id
@@ -19,6 +22,7 @@ public class User {
     @Column(nullable = false, length = 100)
     private String name;
 
+    @JsonIgnore
     @Column(nullable = false)
     private String password;
 
@@ -26,6 +30,7 @@ public class User {
     @Column(nullable = false)
     private Role role = Role.EMPLOYEE;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "assignedTo", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Task> tasks = new ArrayList<>();
 

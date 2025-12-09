@@ -1,8 +1,13 @@
 package ek.tzn.todoapp.controller;
 
+import ek.tzn.todoapp.dto.request.CreateTaskRequest;
+import ek.tzn.todoapp.dto.request.UpdateTaskRequest;
+import ek.tzn.todoapp.entity.Task;
 import ek.tzn.todoapp.service.TaskService;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/tasks")
@@ -14,5 +19,29 @@ public class TaskController {
         this.taskService = taskService;
     }
 
-    // TODO: Implementer endpoints
+    @GetMapping
+    public List<Task> getAllTasks() {
+        return taskService.getAllTasks();
+    }
+
+    @GetMapping("/{id}")
+    public Task getTaskById(@PathVariable Long id) {
+        return taskService.getTaskById(id);
+    }
+
+    @PostMapping
+    public Task createTask(@RequestBody CreateTaskRequest request) {
+        return taskService.createTask(request);
+    }
+
+    @PutMapping("/{id}")
+    public Task updateTask(@PathVariable Long id, @RequestBody UpdateTaskRequest request) {
+        return taskService.updateTask(id, request);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
+        taskService.deleteTask(id);
+        return ResponseEntity.noContent().build();
+    }
 }
