@@ -4,6 +4,7 @@ import ek.tzn.todoapp.dto.request.CreateTaskRequest;
 import ek.tzn.todoapp.dto.request.UpdateTaskRequest;
 import ek.tzn.todoapp.entity.Task;
 import ek.tzn.todoapp.entity.User;
+import ek.tzn.todoapp.entity.enums.Status;
 import ek.tzn.todoapp.exception.ResourceNotFoundException;
 import ek.tzn.todoapp.repository.TaskRepository;
 import ek.tzn.todoapp.repository.UserRepository;
@@ -59,5 +60,19 @@ public class TaskService {
 
     public void deleteTask(Long id) {
         taskRepository.deleteById(id);
+    }
+
+    // TODO: Tilføj ownership check når auth er implementeret
+    public Task updateStatus(Long taskId, Status newStatus) {
+        Task task = getTaskById(taskId);
+        task.setStatus(newStatus);
+        return taskRepository.save(task);
+    }
+
+    // TODO: Tilføj ownership check når auth er implementeret
+    public Task archiveTask(Long taskId) {
+        Task task = getTaskById(taskId);
+        task.setStatus(Status.ARCHIVED);
+        return taskRepository.save(task);
     }
 }

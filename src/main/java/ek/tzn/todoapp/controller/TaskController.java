@@ -1,6 +1,7 @@
 package ek.tzn.todoapp.controller;
 
 import ek.tzn.todoapp.dto.request.CreateTaskRequest;
+import ek.tzn.todoapp.dto.request.StatusUpdateRequest;
 import ek.tzn.todoapp.dto.request.UpdateTaskRequest;
 import ek.tzn.todoapp.entity.Task;
 import ek.tzn.todoapp.service.TaskService;
@@ -43,5 +44,15 @@ public class TaskController {
     public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
         taskService.deleteTask(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/status")
+    public Task updateStatus(@PathVariable Long id, @RequestBody StatusUpdateRequest request) {
+        return taskService.updateStatus(id, request.getStatus());
+    }
+
+    @PatchMapping("/{id}/archive")
+    public Task archiveTask(@PathVariable Long id) {
+        return taskService.archiveTask(id);
     }
 }
