@@ -2,6 +2,7 @@ package ek.tzn.todoapp.service;
 
 import ek.tzn.todoapp.dto.request.CreateTaskRequest;
 import ek.tzn.todoapp.dto.request.UpdateTaskRequest;
+import ek.tzn.todoapp.dto.response.TaskResponse;
 import ek.tzn.todoapp.entity.Task;
 import ek.tzn.todoapp.entity.User;
 import ek.tzn.todoapp.entity.enums.Status;
@@ -23,16 +24,27 @@ public class TaskService {
         this.userRepository = userRepository;
     }
 
-    public List<Task> getAllTasks() {
-        return taskRepository.findAll();
+    public List<TaskResponse> getAllTasks(Long assignedToId) {
+        List<Task> tasks;
+        if (assignedToId != null) {
+            tasks = taskRepository.findByAssignedToId(assignedToId);
+        } else {
+            tasks = taskRepository.findAll();
+        }
+        return tasks.stream().map(TaskResponse::fromEntity).toList();
     }
 
-    public Task getTaskById(Long id) {
-        return taskRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+    public List<TaskResponse> getTasksForUser(Long userId) {
+        return taskRepository.findByAssignedToIdAndStatusNot(userId, Status.ARCHIVED)
+                .stream().map(TaskResponse::fromEntity).toList();
     }
 
-    public Task createTask(CreateTaskRequest request) {
+    public TaskResponse getTaskById(Long id) {
+        Task task = findTaskById(id);
+        return TaskResponse.fromEntity(task);
+    }
+
+    public TaskResponse createTask(CreateTaskRequest request) {
         User user = userRepository.findById(request.getAssignedToId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
@@ -43,11 +55,11 @@ public class TaskService {
         task.setDeadline(request.getDeadline());
         task.setAssignedTo(user);
 
-        return taskRepository.save(task);
+        return TaskResponse.fromEntity(taskRepository.save(task));
     }
 
-    public Task updateTask(Long id, UpdateTaskRequest request) {
-        Task task = getTaskById(id);
+    public TaskResponse updateTask(Long id, UpdateTaskRequest request) {
+        Task task = findTaskById(id);
 
         if (request.getTitle() != null) task.setTitle(request.getTitle());
         if (request.getDescription() != null) task.setDescription(request.getDescription());
@@ -55,7 +67,12 @@ public class TaskService {
         if (request.getDeadline() != null) task.setDeadline(request.getDeadline());
         if (request.getStatus() != null) task.setStatus(request.getStatus());
 
-        return taskRepository.save(task);
+        return TaskResponse.fromEntity(taskRepository.save(task));
+    }
+
+    private Task findTaskById(Long id) {
+        return taskRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
     }
 
     public void deleteTask(Long id) {
@@ -63,16 +80,16 @@ public class TaskService {
     }
 
     // TODO: Tilføj ownership check når auth er implementeret
-    public Task updateStatus(Long taskId, Status newStatus) {
-        Task task = getTaskById(taskId);
+    public TaskResponse updateStatus(Long taskId, Status newStatus) {
+        Task task = findTaskById(taskId);
         task.setStatus(newStatus);
-        return taskRepository.save(task);
+        return TaskResponse.fromEntity(taskRepository.save(task));
     }
 
     // TODO: Tilføj ownership check når auth er implementeret
-    public Task archiveTask(Long taskId) {
-        Task task = getTaskById(taskId);
+    public TaskResponse archiveTask(Long taskId) {
+        Task task = findTaskById(taskId);
         task.setStatus(Status.ARCHIVED);
-        return taskRepository.save(task);
+        return TaskResponse.fromEntity(taskRepository.save(task));
     }
 }
