@@ -1,5 +1,6 @@
 package ek.tzn.todoapp.dto.response;
 
+import ek.tzn.todoapp.entity.User;
 import ek.tzn.todoapp.entity.enums.Role;
 
 public class UserResponse {
@@ -7,6 +8,15 @@ public class UserResponse {
     private String username;
     private String name;
     private Role role;
+
+    public static UserResponse fromEntity(User user) {
+        UserResponse response = new UserResponse();
+        response.setId(user.getId());
+        response.setUsername(user.getUsername());
+        response.setName(user.getName());
+        response.setRole(user.getRole());
+        return response;
+    }
 
     // Getters and Setters
     public Long getId() { return id; }

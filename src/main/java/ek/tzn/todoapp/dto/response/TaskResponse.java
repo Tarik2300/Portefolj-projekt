@@ -1,5 +1,6 @@
 package ek.tzn.todoapp.dto.response;
 
+import ek.tzn.todoapp.entity.Task;
 import ek.tzn.todoapp.entity.enums.Priority;
 import ek.tzn.todoapp.entity.enums.Status;
 import java.time.LocalDate;
@@ -14,6 +15,18 @@ public class TaskResponse {
     private Status status;
     private Long assignedToId;
     private List<SubtaskResponse> subtasks;
+
+    public static TaskResponse fromEntity(Task task) {
+        TaskResponse response = new TaskResponse();
+        response.setId(task.getId());
+        response.setTitle(task.getTitle());
+        response.setDescription(task.getDescription());
+        response.setPriority(task.getPriority());
+        response.setDeadline(task.getDeadline());
+        response.setStatus(task.getStatus());
+        response.setAssignedToId(task.getAssignedTo().getId());
+        return response;
+    }
 
     // Getters and Setters
     public Long getId() { return id; }

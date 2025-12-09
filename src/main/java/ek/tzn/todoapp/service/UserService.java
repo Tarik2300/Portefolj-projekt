@@ -1,5 +1,6 @@
 package ek.tzn.todoapp.service;
 
+import ek.tzn.todoapp.dto.response.UserResponse;
 import ek.tzn.todoapp.entity.User;
 import ek.tzn.todoapp.exception.ResourceNotFoundException;
 import ek.tzn.todoapp.repository.UserRepository;
@@ -16,12 +17,15 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    public List<UserResponse> getAllUsers() {
+        return userRepository.findAll().stream()
+                .map(UserResponse::fromEntity)
+                .toList();
     }
 
-    public User getUserById(Long id) {
-        return userRepository.findById(id)
+    public UserResponse getUserById(Long id) {
+        User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        return UserResponse.fromEntity(user);
     }
 }
