@@ -1,13 +1,24 @@
 package ek.tzn.todoapp.dto.request;
 
 import ek.tzn.todoapp.entity.enums.Priority;
+import jakarta.validation.constraints.FutureOrPresent;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 
 public class CreateTaskRequest {
+
+    @NotBlank(message = "Titel må ikke være tom")
     private String title;
+
     private String description;
+
     private Priority priority;
+
+    @FutureOrPresent(message = "Deadline må ikke være i fortiden")
     private LocalDate deadline;
+
+    @NotNull(message = "Opgaven skal tildeles en bruger")
     private Long assignedToId;
 
     // Getters and Setters

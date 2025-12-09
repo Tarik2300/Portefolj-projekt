@@ -23,8 +23,15 @@ public class TaskService {
         this.userRepository = userRepository;
     }
 
-    public List<Task> getAllTasks() {
+    public List<Task> getAllTasks(Long assignedToId) {
+        if (assignedToId != null) {
+            return taskRepository.findByAssignedToId(assignedToId);
+        }
         return taskRepository.findAll();
+    }
+
+    public List<Task> getTasksForUser(Long userId) {
+        return taskRepository.findByAssignedToIdAndStatusNot(userId, Status.ARCHIVED);
     }
 
     public Task getTaskById(Long id) {

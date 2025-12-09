@@ -5,6 +5,7 @@ import ek.tzn.todoapp.dto.request.StatusUpdateRequest;
 import ek.tzn.todoapp.dto.request.UpdateTaskRequest;
 import ek.tzn.todoapp.entity.Task;
 import ek.tzn.todoapp.service.TaskService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,8 +22,13 @@ public class TaskController {
     }
 
     @GetMapping
-    public List<Task> getAllTasks() {
-        return taskService.getAllTasks();
+    public List<Task> getAllTasks(@RequestParam(required = false) Long assignedToId) {
+        return taskService.getAllTasks(assignedToId);
+    }
+
+    @GetMapping("/my")
+    public List<Task> getMyTasks(@RequestParam Long userId) {
+        return taskService.getTasksForUser(userId);
     }
 
     @GetMapping("/{id}")
@@ -31,7 +37,7 @@ public class TaskController {
     }
 
     @PostMapping
-    public Task createTask(@RequestBody CreateTaskRequest request) {
+    public Task createTask(@Valid @RequestBody CreateTaskRequest request) {
         return taskService.createTask(request);
     }
 
