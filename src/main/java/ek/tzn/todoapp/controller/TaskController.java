@@ -63,7 +63,10 @@ public class TaskController {
 
 
     @PatchMapping("/{id}/archive")
-    public TaskResponse archiveTask(@PathVariable Long id) {
-        return taskService.archiveTask(id);
+    public TaskResponse archiveTask(
+            @PathVariable Long id,
+            @RequestParam Long userId
+    ) {
+        return taskService.archiveTask(id, userId);
     }
 }
