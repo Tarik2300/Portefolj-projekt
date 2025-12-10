@@ -51,14 +51,22 @@ public class TaskController {
         taskService.deleteTask(id);
         return ResponseEntity.noContent().build();
     }
-
+    // OBS: Rettet til at sende userId med
     @PatchMapping("/{id}/status")
-    public TaskResponse updateStatus(@PathVariable Long id, @RequestBody StatusUpdateRequest request) {
-        return taskService.updateStatus(id, request.getStatus());
+    public TaskResponse updateStatus(
+            @PathVariable Long id,
+            @RequestParam Long userId,
+            @RequestBody StatusUpdateRequest request
+    ) {
+        return taskService.updateStatus(id, request.getStatus(), userId);
     }
 
+
     @PatchMapping("/{id}/archive")
-    public TaskResponse archiveTask(@PathVariable Long id) {
-        return taskService.archiveTask(id);
+    public TaskResponse archiveTask(
+            @PathVariable Long id,
+            @RequestParam Long userId
+    ) {
+        return taskService.archiveTask(id, userId);
     }
 }

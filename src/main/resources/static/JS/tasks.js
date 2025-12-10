@@ -1,4 +1,4 @@
-// ===== ENUMS & KONFIG =====
+// ===== ENUMS &  KONFIG =====
 
 // Skal matche din Java Status-enum
 const Status = {
@@ -236,6 +236,14 @@ function createTaskCard(task) {
 
     card.appendChild(details);
 
+    // knap til at arkivere HELE opgaven
+    const archiveTaskBtn = document.createElement("button");
+    archiveTaskBtn.textContent = "Arkivér opgave";
+    archiveTaskBtn.classList.add("subtask-archive-btn"); // genbrug stil
+    archiveTaskBtn.onclick = () => archiveTask(task);
+
+    card.appendChild(archiveTaskBtn);
+
     return card;
 }
 
@@ -275,6 +283,30 @@ function renderTasks() {
             }
         });
 }
+
+async function archiveTask(task) {
+    if (!confirm("Er du sikker på at du vil arkivere denne opgave?")) return;
+
+    try {
+        const response = await fetch(`/api/tasks/${task.id}/archive?userId=${currentUserId}`, {
+            method: "PATCH"
+        });
+
+        if (!response.ok) {
+            alert("Fejl ved arkivering af opgave");
+            return;
+        }
+
+        const archived = await response.json();
+        task.status = archived.status; // ARCHIVED
+
+        renderTasks(); // Fjerner kortet fra boardet
+    } catch (err) {
+        console.error("Kunne ikke arkivere:", err);
+        alert("Der opstod en fejl – se console");
+    }
+}
+
 
 // ===== INIT =====
 
