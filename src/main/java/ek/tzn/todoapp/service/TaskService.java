@@ -10,6 +10,8 @@ import ek.tzn.todoapp.exception.ResourceNotFoundException;
 import ek.tzn.todoapp.repository.TaskRepository;
 import ek.tzn.todoapp.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import ek.tzn.todoapp.exception.UnauthorizedException;
+
 
 import java.util.List;
 
@@ -79,12 +81,19 @@ public class TaskService {
         taskRepository.deleteById(id);
     }
 
-    // TODO: Tilføj ownership check når auth er implementeret
-    public TaskResponse updateStatus(Long taskId, Status newStatus) {
+    // OBS: Rettet til at tage currentUserId med og lave check:
+    public TaskResponse updateStatus(Long taskId, Status newStatus, Long currentUserId) {
         Task task = findTaskById(taskId);
+
+        // Ejer-check: kun den bruger, som opgaven er tildelt, må ændre status
+        if (!task.getAssignedTo().getId().equals(currentUserId)) {
+            throw new UnauthorizedException("Du kan ikke ændre status på en opgave, der ikke er din.");
+        }
+
         task.setStatus(newStatus);
         return TaskResponse.fromEntity(taskRepository.save(task));
     }
+
 
     // TODO: Tilføj ownership check når auth er implementeret
     public TaskResponse archiveTask(Long taskId) {
@@ -92,4 +101,5 @@ public class TaskService {
         task.setStatus(Status.ARCHIVED);
         return TaskResponse.fromEntity(taskRepository.save(task));
     }
+    //sdfsdf
 }

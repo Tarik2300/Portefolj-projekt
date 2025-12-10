@@ -5,6 +5,7 @@ import ek.tzn.todoapp.entity.enums.Status;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import ek.tzn.todoapp.exception.UnauthorizedException;
 
 import java.util.List;
 
@@ -37,4 +38,18 @@ class TaskServiceTest {
                         .noneMatch(t -> t.status() == Status.ARCHIVED),
                 "Ingen tasks må være ARCHIVED");
     }
+    @Test
+    void updateStatus_throwsUnauthorized_whenUserIsNotOwner() {
+        // arrange
+        Long taskId = 1L;   // I data.sql er task 1 tildelt userId = 2
+        Long wrongUserId = 3L;
+
+        // act + assert
+        assertThrows(
+                UnauthorizedException.class,
+                () -> taskService.updateStatus(taskId, Status.DONE, wrongUserId),
+                "Forventede UnauthorizedException når forkert bruger forsøger at ændre status"
+        );
+    }
+
 }
