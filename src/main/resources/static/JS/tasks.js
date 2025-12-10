@@ -1,4 +1,4 @@
-// ===== ENUMS & KONFIG =====
+// ===== ENUMS &  KONFIG =====
 
 // Skal matche din Java Status-enum
 const Status = {
