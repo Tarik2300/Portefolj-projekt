@@ -11,7 +11,7 @@ import ek.tzn.todoapp.repository.TaskRepository;
 import ek.tzn.todoapp.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import ek.tzn.todoapp.exception.UnauthorizedException;
-
+import ek.tzn.todoapp.entity.Subtask;
 
 import java.util.List;
 
@@ -98,8 +98,16 @@ public class TaskService {
     // TODO: Tilføj ownership check når auth er implementeret
     public TaskResponse archiveTask(Long taskId) {
         Task task = findTaskById(taskId);
+
+        // (3.3) Cascade: markér alle subtasks som completed
+        if (task.getSubtasks() != null) {
+            for (Subtask subtask : task.getSubtasks()) {
+                subtask.setCompleted(true);
+            }
+        }
+
         task.setStatus(Status.ARCHIVED);
         return TaskResponse.fromEntity(taskRepository.save(task));
     }
-    //sdfsdf
+
 }
