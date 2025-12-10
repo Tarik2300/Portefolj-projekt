@@ -52,4 +52,18 @@ class TaskServiceTest {
         );
     }
 
+    @Test
+    void archiveTask_throwsUnauthorized_whenUserIsNotOwner() {
+        // arrange
+        Long taskId = 1L;   // I data.sql er task 1 tildelt userId = 2
+        Long wrongUserId = 3L;
+
+        // act + assert
+        assertThrows(
+                UnauthorizedException.class,
+                () -> taskService.archiveTask(taskId, wrongUserId),
+                "Forventede UnauthorizedException når forkert bruger forsøger at arkivere opgaven"
+        );
+    }
+
 }

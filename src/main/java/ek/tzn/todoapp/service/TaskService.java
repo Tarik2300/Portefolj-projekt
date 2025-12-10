@@ -96,10 +96,15 @@ public class TaskService {
 
 
     // TODO: Tilføj ownership check når auth er implementeret
-    public TaskResponse archiveTask(Long taskId) {
+    public TaskResponse archiveTask(Long taskId, Long currentUserId) {
         Task task = findTaskById(taskId);
 
-        // (3.3) Cascade: markér alle subtasks som completed
+        // 3.4 – ejer-check: må kun arkiveres af den, der er assignedTo
+        if (!task.getAssignedTo().getId().equals(currentUserId)) {
+            throw new UnauthorizedException("Du kan ikke arkivere en opgave, der ikke er din.");
+        }
+
+        // 3.3 – cascade: markér alle subtasks som completed
         if (task.getSubtasks() != null) {
             for (Subtask subtask : task.getSubtasks()) {
                 subtask.setCompleted(true);
