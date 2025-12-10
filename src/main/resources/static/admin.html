@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin – Task Manager</title>
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+<h1>Admin – Task Manager</h1>
+
+<section class="admin-section">
+  <h2>Opret ny task</h2>
+
+  <form id="create-task-form">
+    <label>
+      Bruger:
+      <select id="user-select">
+        <option value="1">Medarbejder 1</option>
+        <option value="2">Medarbejder 2</option>
+      </select>
+    </label>
+
+    <label>
+      Titel:
+      <input type="text" id="task-title" required>
+    </label>
+
+    <label>
+      Beskrivelse:
+      <input type="text" id="task-desc" required>
+    </label>
+
+    <label>
+      Status:
+      <select id="task-status">
+        <option value="TODO">TODO</option>
+        <option value="IN_PROGRESS">IN_PROGRESS</option>
+        <option value="DONE">DONE</option>
+      </select>
+    </label>
+
+    <button type="submit">Opret task</button>
+  </form>
+</section>
+
+<section class="admin-section">
+  <h2>Alle tasks</h2>
+
+  <table id="task-table">
+    <thead>
+    <tr>
+      <th>ID</th>
+      <th>Bruger</th>
+      <th>Titel</th>
+      <th>Status</th>
+      <th>Handlinger</th>
+    </tr>
+    </thead>
+    <tbody>
+    <!-- fyldes af JS -->
+    </tbody>
+  </table>
+</section>
+
+<script src="js/admin.js"></script>
+</body>
+</html>
