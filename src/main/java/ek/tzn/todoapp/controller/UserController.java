@@ -1,8 +1,10 @@
 package ek.tzn.todoapp.controller;
 
+import ek.tzn.todoapp.dto.response.UserResponse;
 import ek.tzn.todoapp.service.UserService;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
@@ -14,5 +16,13 @@ public class UserController {
         this.userService = userService;
     }
 
-    // TODO: Implementer endpoints
+    @GetMapping
+    public List<UserResponse> getAllUsers() {
+        return userService.getAllUsers();
+    }
+
+    @GetMapping("/{id}")
+    public UserResponse getUserById(@PathVariable Long id) {
+        return userService.getUserById(id);
+    }
 }

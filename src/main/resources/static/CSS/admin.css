@@ -1,0 +1,65 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    background-color: #e8f2f8;
+}
+
+h1 {
+    margin-bottom: 20px;
+}
+
+.admin-section {
+    background-color: #ffffff;
+    padding: 15px 20px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 5px rgba(0,0,0,0.1);
+}
+
+form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 20px;
+    align-items: flex-end;
+}
+
+label {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.9rem;
+}
+
+input, select {
+    padding: 4px 6px;
+    font-size: 0.9rem;
+}
+
+button {
+    padding: 6px 10px;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #ffffff;
+}
+
+th, td {
+    border: 1px solid #ccc;
+    padding: 6px 8px;
+    text-align: left;
+    font-size: 0.9rem;
+}
+
+th {
+    background-color: #d0e0f0;
+}
+
+.action-btn {
+    margin-right: 5px;
+    padding: 3px 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+}

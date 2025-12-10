@@ -1,3 +1,10 @@
+body {
+    margin: 0;
+    background-color: aliceblue;
+    font-family: Arial, sans-serif;
+}
+
+
 .header {
     background-color: #00597A;
     color: white;
@@ -5,10 +12,6 @@
     justify-content: space-between;
     align-items: center;
     padding: 15px 30px;
-}
-
-body {
-    background-color:aliceblue;
 }
 
 .logo {
@@ -37,9 +40,18 @@ body {
     height: 40px;
     border-radius: 50%;
     border: 2px solid #000;
-    object-fit: cover;
+    overflow: hidden;
+    background-color: #C9D2DE;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
+.profile-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
 
 .board-container {
     margin: 40px auto;
@@ -68,29 +80,186 @@ body {
 
 .column-content {
     padding: 20px;
-    height: 600px; /* placeholder */
+    height: 600px;
 }
 
-.header-right {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
 
-.profile-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
+.task-card {
+    background-color: #ffffff;
     border: 2px solid #000;
-    overflow: hidden;
-    background-color: #C9D2DE;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    border-radius: 30px;
+    padding: 18px 22px;
+    margin-bottom: 25px;
+    max-width: 320px;
+    margin-left: auto;
+    margin-right: auto;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.15);
 }
 
-.profile-icon img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+.task-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.task-header {
+    text-align: center;
+    cursor: pointer;
+}
+
+.task-title {
+    font-weight: bold;
+    font-size: 1.2rem;
+    margin-bottom: 4px;
+}
+
+.task-desc {
+    font-style: italic;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+}
+
+.subtask-container {
+    margin-top: 8px;
+    margin-bottom: 10px;
+    font-size: 0.85rem;
+}
+
+.task-card:not(.expanded) .task-desc {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.task-card.expanded .task-desc {
+    white-space: normal;
+}
+
+.task-card.expanded {
+    transform: scale(1.02);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.25);
+}
+
+.task-status-badge {
+    display: inline-block;
+    margin-top: 4px;
+    padding: 2px 8px;
+    font-size: 0.75rem;
+    border-radius: 999px;
+    border: 1px solid #000;
+    background-color: #F8E978;
+    font-weight: bold;
+}
+
+.task-details {
+    display: none;
+    margin-top: 10px;
+}
+
+.task-card.expanded .task-details {
+    display: block;
+}
+
+.task-details {
+    display: block;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    margin-top: 0;
+    transition: max-height 0.25s ease, opacity 0.25s ease, margin-top 0.25s ease;
+}
+
+.task-card.expanded .task-details {
+    max-height: 500px;
+    opacity: 1;
+    margin-top: 10px;
+}
+
+.task-deadline {
+    font-size: 0.8rem;
+    text-align: center;
+    margin-bottom: 4px;
+    font-weight: normal;
+}
+
+.subtask-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    column-gap: 6px;
+    margin-bottom: 4px;
+}
+
+.subtask-row span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.subtask-row select {
+    font-size: 0.8rem;
+    padding: 2px 4px;
+    background-color: #F8E978; /* lys gul dropdown */
+    border: 1px solid #000;
+    border-radius: 5px;
+}
+
+.subtask-archive-btn {
+    padding: 2px 6px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    background-color: #FF9999;
+    border: 1px solid #000;
+    border-radius: 6px;
+}
+
+.subtask-input-wrapper {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+    margin-top: 5px;
+}
+
+.subtask-input {
+    flex: 1;
+    font-size: 0.8rem;
+    padding: 3px 5px;
+}
+
+.subtask-add-btn {
+    padding: 2px 6px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    background-color: #C9D2DE;
+    border: 1px solid #000;
+    border-radius: 6px;
+}
+
+.task-status-bar {
+    margin-top: 12px;
+    padding-top: 8px;
+    border-top: 1px solid #ddd;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.85rem;
+}
+
+.task-status-bar select {
+    font-size: 0.85rem;
+    padding: 2px 8px;
+    border: 1px solid #000;
+    border-radius: 7px;
+    background-color: #F8E978;
+    font-weight: bold;
+}
+
+.task-status-save-btn {
+    padding: 4px 10px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    background-color: #8CE07F;
+    border: 2px solid #000;
+    border-radius: 10px;
+    font-weight: bold;
 }

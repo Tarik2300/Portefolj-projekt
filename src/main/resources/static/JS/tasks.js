@@ -1,0 +1,281 @@
+// ===== ENUMS & KONFIG =====
+
+// Skal matche din Java Status-enum
+const Status = {
+    TODO: "TODO",
+    IN_PROGRESS: "IN_PROGRESS",
+    DONE: "DONE",
+    ARCHIVED: "ARCHIVED"
+};
+
+// Bruges til dropdowns (task + subtask)
+const STATUS_FLOW = [Status.TODO, Status.IN_PROGRESS, Status.DONE];
+
+// midlertidig “logget ind” bruger (senere: hent fra login)
+const currentUserId = 1;
+
+// Global liste af tasks – fyldes fra API
+let tasks = [];
+
+// ===== HJÆLPER TIL DATO =====
+
+// Forventer ISO-dato fra backend: "2025-12-10"
+function formatDeadline(isoDateString) {
+    if (!isoDateString) return null;
+
+    const parts = isoDateString.split("-");
+    if (parts.length >= 3) {
+        const [yyyy, mm, dd] = parts;
+        return `${dd}-${mm}-${yyyy}`; // dansk format dd-MM-yyyy
+    }
+    return isoDateString; // fallback hvis format er anderledes
+}
+
+// ===== API-LOAD =====
+
+async function loadTasks() {
+    try {
+        // Brug dit "mine tasks"-endpoint
+        const response = await fetch(`/api/tasks/my?userId=${currentUserId}`);
+        if (!response.ok) {
+            throw new Error("Fejl ved hentning af tasks: " + response.status);
+        }
+
+        const data = await response.json();
+        console.log("RAW API data:", data);
+
+        // Map TaskResponse -> frontend-model
+        tasks = data.map(t => ({
+            id: t.id,
+            title: t.title ?? t.name ?? "(ingen titel)",
+            description: t.description ?? "",
+            status: t.status,
+            priority: t.priority ?? null,
+            deadline: t.deadline ?? null,
+            // hvis TaskResponse har assignedToId eller embedded user
+            assignedToId: t.assignedToId ?? t.userId ?? t.assignedTo?.id ?? null,
+            // subtasks kan hedde subtasks eller subTasks afhængigt af din DTO
+            subtasks: (t.subtasks ?? t.subTasks ?? []).map(st => ({
+                id: st.id,
+                title: st.title ?? st.name ?? "",
+                status: st.status
+            }))
+        }));
+
+        console.log("Mapped tasks:", tasks);
+        renderTasks();
+    } catch (err) {
+        console.error("Fejl i loadTasks:", err);
+    }
+}
+
+// ===== HELPERS TIL RENDER =====
+
+function createSubtaskRow(task, subtask) {
+    const row = document.createElement("div");
+    row.classList.add("subtask-row");
+
+    const label = document.createElement("span");
+    label.textContent = subtask.title;
+
+    // dropdown til subtask-status
+    const select = document.createElement("select");
+    STATUS_FLOW.forEach(st => {
+        const opt = document.createElement("option");
+        opt.value = st;
+        opt.textContent = st;
+        select.appendChild(opt);
+    });
+    select.value = subtask.status;
+    select.onchange = () => {
+        subtask.status = select.value;
+        // TODO: PUT /api/subtasks/{id} med ny status
+        renderTasks();
+    };
+
+    const archiveBtn = document.createElement("button");
+    archiveBtn.textContent = "Arkivér";
+    archiveBtn.classList.add("subtask-archive-btn");
+    archiveBtn.onclick = () => {
+        subtask.status = Status.ARCHIVED;
+        // TODO: PATCH/PUT /api/subtasks/{id}/archive
+        renderTasks();
+    };
+
+    row.appendChild(label);
+    row.appendChild(select);
+    row.appendChild(archiveBtn);
+    return row;
+}
+
+// ===== Opret ét task-kort =====
+
+function createTaskCard(task) {
+    const card = document.createElement("div");
+    card.classList.add("task-card");
+    card.dataset.taskId = task.id;
+
+    // ----- HEADER (altid synlig) -----
+    const header = document.createElement("div");
+    header.classList.add("task-header");
+
+    const titleEl = document.createElement("div");
+    titleEl.classList.add("task-title");
+    titleEl.textContent = task.title;
+
+    const descEl = document.createElement("div");
+    descEl.classList.add("task-desc");
+    descEl.textContent = task.description;
+
+    // NYT: deadline-linje (hvis der er deadline)
+    const formattedDeadline = formatDeadline(task.deadline);
+    let deadlineEl = null;
+    if (formattedDeadline) {
+        deadlineEl = document.createElement("div");
+        deadlineEl.classList.add("task-deadline");
+        deadlineEl.textContent = `Deadline: ${formattedDeadline}`;
+    }
+
+    const statusBadge = document.createElement("span");
+    statusBadge.classList.add("task-status-badge");
+    statusBadge.textContent = task.status;
+
+    header.appendChild(titleEl);
+    header.appendChild(descEl);
+    if (deadlineEl) header.appendChild(deadlineEl);
+    header.appendChild(statusBadge);
+
+    // klik på header = expand/collapse
+    header.addEventListener("click", () => {
+        card.classList.toggle("expanded");
+    });
+
+    card.appendChild(header);
+
+    // ----- DETAILS (subtasks + statusstyring) -----
+    const details = document.createElement("div");
+    details.classList.add("task-details");
+
+    // subtasks
+    const subtaskContainer = document.createElement("div");
+    subtaskContainer.classList.add("subtask-container");
+
+    const subHeader = document.createElement("div");
+    subHeader.textContent = "Subtasks:";
+    subHeader.style.fontWeight = "bold";
+    subHeader.style.marginBottom = "4px";
+    subtaskContainer.appendChild(subHeader);
+
+    task.subtasks
+        .filter(st => st.status !== Status.ARCHIVED)
+        .forEach(st => subtaskContainer.appendChild(createSubtaskRow(task, st)));
+
+    details.appendChild(subtaskContainer);
+
+    // input til ny subtask
+    const inputWrapper = document.createElement("div");
+    inputWrapper.classList.add("subtask-input-wrapper");
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.placeholder = "Ny subtask...";
+    input.classList.add("subtask-input");
+
+    const addBtn = document.createElement("button");
+    addBtn.textContent = "+";
+    addBtn.classList.add("subtask-add-btn");
+    addBtn.onclick = () => {
+        if (!input.value.trim()) return;
+        const newSubtask = {
+            id: Date.now(), // midlertidigt ID – backend vil lave rigtigt ID senere
+            title: input.value.trim(),
+            status: Status.TODO
+        };
+        task.subtasks.push(newSubtask);
+        input.value = "";
+        // TODO: POST /api/tasks/{taskId}/subtasks
+        renderTasks();
+        const cardAgain = document.querySelector(`[data-task-id="${task.id}"]`);
+        if (cardAgain) cardAgain.classList.add("expanded");
+    };
+
+    inputWrapper.appendChild(input);
+    inputWrapper.appendChild(addBtn);
+    details.appendChild(inputWrapper);
+
+    // status-bar nederst (for task)
+    const statusBar = document.createElement("div");
+    statusBar.classList.add("task-status-bar");
+
+    const statusText = document.createElement("span");
+    statusText.textContent = `Status: "${task.status}"`;
+
+    const statusSelect = document.createElement("select");
+    STATUS_FLOW.forEach(st => {
+        const opt = document.createElement("option");
+        opt.value = st;
+        opt.textContent = st;
+        statusSelect.appendChild(opt);
+    });
+    statusSelect.value = task.status;
+
+    const saveBtn = document.createElement("button");
+    saveBtn.textContent = "Gem";
+    saveBtn.classList.add("task-status-save-btn");
+    saveBtn.onclick = () => {
+        const newStatus = statusSelect.value;
+        task.status = newStatus;
+        // TODO: PATCH /api/tasks/{id}/status med { status: newStatus }
+        renderTasks();
+    };
+
+    statusBar.appendChild(statusText);
+    statusBar.appendChild(statusSelect);
+    statusBar.appendChild(saveBtn);
+    details.appendChild(statusBar);
+
+    card.appendChild(details);
+
+    return card;
+}
+
+// ===== RENDER HELE BOARD'ET =====
+
+function renderTasks() {
+    const todoCol = document.getElementById("todo-column");
+    const inprogressCol = document.getElementById("inprogress-column");
+    const doneCol = document.getElementById("done-column");
+
+    if (!todoCol || !inprogressCol || !doneCol) {
+        console.error("Kolonner ikke fundet i DOM'en");
+        return;
+    }
+
+    todoCol.innerHTML = "";
+    inprogressCol.innerHTML = "";
+    doneCol.innerHTML = "";
+
+    tasks
+        .filter(t => t.status !== Status.ARCHIVED)
+        .forEach(task => {
+            const card = createTaskCard(task);
+            switch (task.status) {
+                case Status.TODO:
+                    todoCol.appendChild(card);
+                    break;
+                case Status.IN_PROGRESS:
+                    inprogressCol.appendChild(card);
+                    break;
+                case Status.DONE:
+                    doneCol.appendChild(card);
+                    break;
+                default:
+                    todoCol.appendChild(card);
+                    break;
+            }
+        });
+}
+
+// ===== INIT =====
+
+loadTasks();

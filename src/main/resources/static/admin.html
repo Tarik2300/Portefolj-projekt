@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin – Task Manager</title>
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+<h1>Admin – Task Manager</h1>
+
+<section class="admin-section">
+  <h2>Opret ny task</h2>
+
+  <form id="create-task-form" class="task-form">
+    <!-- Bruger -->
+    <label for="user-select">
+      Bruger:
+      <select id="user-select" name="assignedToId" required>
+        <option value="">Vælg medarbejder...</option>
+      </select>
+    </label>
+
+    <!-- Titel -->
+    <label for="task-title">
+      Titel:
+      <input type="text" id="task-title" name="title" required>
+    </label>
+
+    <!-- Beskrivelse -->
+    <label for="task-desc">
+      Beskrivelse:
+      <textarea id="task-desc" name="description" rows="3" required></textarea>
+    </label>
+
+    <!-- PRIORITET (NYT) -->
+    <label for="task-priority">
+      Prioritet:
+      <select id="task-priority" name="priority">
+        <option value="">Vælg prioritet...</option>
+        <option value="LOW">Lav</option>
+        <option value="MEDIUM">Mellem</option>
+        <option value="HIGH">Høj</option>
+      </select>
+    </label>
+
+    <!-- DEADLINE (NYT) -->
+    <label for="task-deadline">
+      Deadline:
+      <input type="date" id="task-deadline" name="deadline">
+    </label>
+
+    <button type="submit">Opret task</button>
+  </form>
+</section>
+
+<section class="admin-section">
+  <h2>Alle tasks</h2>
+
+  <table id="task-table">
+    <thead>
+    <tr>
+      <th>ID</th>
+      <th>Bruger</th>
+      <th>Titel</th>
+      <th>Beskrivelse</th>
+      <th>Prioritet</th>
+      <th>Deadline</th>
+      <th>Status</th>
+      <th>Handlinger</th>
+    </tr>
+    </thead>
+    <tbody>
+    </tbody>
+  </table>
+</section>
+
+<script src="JS/admin.js"></script>
+</body>
+</html>
