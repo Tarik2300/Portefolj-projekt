@@ -11,13 +11,13 @@ const Status = {
 // Bruges til dropdowns (task + subtask)
 const STATUS_FLOW = [Status.TODO, Status.IN_PROGRESS, Status.DONE];
 
-// midlertidig “logget ind” bruger (senere: hent fra login)
+// midlertidig "logget ind" bruger (senere: hent fra login)
 const currentUserId = 1;
 
 // Global liste af tasks – fyldes fra API
 let tasks = [];
 
-// ===== HJÆLPER TIL DATO =====
+// ===== HJÆLPERE =====
 
 // Forventer ISO-dato fra backend: "2025-12-10"
 function formatDeadline(isoDateString) {
@@ -29,6 +29,21 @@ function formatDeadline(isoDateString) {
         return `${dd}-${mm}-${yyyy}`; // dansk format dd-MM-yyyy
     }
     return isoDateString; // fallback hvis format er anderledes
+}
+
+function formatPriority(priority) {
+    if (!priority) return null;
+
+    switch (priority) {
+        case "LOW":
+            return "Lav";
+        case "MEDIUM":
+            return "Mellem";
+        case "HIGH":
+            return "Høj";
+        default:
+            return priority; // fallback hvis der kommer noget andet
+    }
 }
 
 // ===== API-LOAD =====
@@ -87,19 +102,55 @@ function createSubtaskRow(task, subtask) {
         select.appendChild(opt);
     });
     select.value = subtask.status;
-    select.onchange = () => {
-        subtask.status = select.value;
-        // TODO: PUT /api/subtasks/{id} med ny status
-        renderTasks();
+
+    // PATCH ved status-skift
+    select.onchange = async () => {
+        const newStatus = select.value;
+
+        try {
+            const response = await fetch(`/api/subtasks/${subtask.id}/status`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status: newStatus })
+            });
+
+            if (!response.ok) {
+                throw new Error("Fejl ved opdatering af subtask-status: " + response.status);
+            }
+
+            subtask.status = newStatus;
+            renderTasks();
+        } catch (err) {
+            console.error(err);
+            alert("Kunne ikke opdatere subtask-status");
+            select.value = subtask.status;
+        }
     };
 
     const archiveBtn = document.createElement("button");
     archiveBtn.textContent = "Arkivér";
     archiveBtn.classList.add("subtask-archive-btn");
-    archiveBtn.onclick = () => {
-        subtask.status = Status.ARCHIVED;
-        // TODO: PATCH/PUT /api/subtasks/{id}/archive
-        renderTasks();
+    archiveBtn.onclick = async () => {
+        const confirmed = confirm("Er du sikker på, at du vil arkivere denne subtask?");
+        if (!confirmed) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/subtasks/${subtask.id}/archive`, {
+                method: "PATCH"
+            });
+
+            if (!response.ok) {
+                throw new Error("Fejl ved arkivering af subtask: " + response.status);
+            }
+
+            subtask.status = Status.ARCHIVED;
+            renderTasks();
+        } catch (err) {
+            console.error(err);
+            alert("Kunne ikke arkivere subtask");
+        }
     };
 
     row.appendChild(label);
@@ -127,13 +178,22 @@ function createTaskCard(task) {
     descEl.classList.add("task-desc");
     descEl.textContent = task.description;
 
-    // NYT: deadline-linje (hvis der er deadline)
+    // deadline-linje (hvis der er deadline)
     const formattedDeadline = formatDeadline(task.deadline);
     let deadlineEl = null;
     if (formattedDeadline) {
         deadlineEl = document.createElement("div");
         deadlineEl.classList.add("task-deadline");
         deadlineEl.textContent = `Deadline: ${formattedDeadline}`;
+    }
+
+    // NYT: prioritet-linje (hvis der er prioritet)
+    const formattedPriority = formatPriority(task.priority);
+    let priorityEl = null;
+    if (formattedPriority) {
+        priorityEl = document.createElement("div");
+        priorityEl.classList.add("task-priority");
+        priorityEl.textContent = `Prioritet: ${formattedPriority}`;
     }
 
     const statusBadge = document.createElement("span");
@@ -143,6 +203,7 @@ function createTaskCard(task) {
     header.appendChild(titleEl);
     header.appendChild(descEl);
     if (deadlineEl) header.appendChild(deadlineEl);
+    if (priorityEl) header.appendChild(priorityEl);
     header.appendChild(statusBadge);
 
     // klik på header = expand/collapse
@@ -222,11 +283,27 @@ function createTaskCard(task) {
     const saveBtn = document.createElement("button");
     saveBtn.textContent = "Gem";
     saveBtn.classList.add("task-status-save-btn");
-    saveBtn.onclick = () => {
+    saveBtn.onclick = async () => {
         const newStatus = statusSelect.value;
-        task.status = newStatus;
-        // TODO: PATCH /api/tasks/{id}/status med { status: newStatus }
-        renderTasks();
+
+        try {
+            const response = await fetch(`/api/tasks/${task.id}/status`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status: newStatus })
+            });
+
+            if (!response.ok) {
+                throw new Error("Fejl ved opdatering af task-status: " + response.status);
+            }
+
+            task.status = newStatus;
+            renderTasks();
+        } catch (err) {
+            console.error(err);
+            alert("Kunne ikke opdatere task-status");
+            statusSelect.value = task.status;
+        }
     };
 
     statusBar.appendChild(statusText);
