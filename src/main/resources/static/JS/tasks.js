@@ -1,6 +1,5 @@
 // ===== ENUMS & KONFIG =====
 
-// Skal matche din Java Status-enum
 const Status = {
     TODO: "TODO",
     IN_PROGRESS: "IN_PROGRESS",
@@ -8,10 +7,8 @@ const Status = {
     ARCHIVED: "ARCHIVED"
 };
 
-// Bruges til dropdowns (task + subtask)
 const STATUS_FLOW = [Status.TODO, Status.IN_PROGRESS, Status.DONE];
 
-// midlertidig "logget ind" bruger (senere: hent fra login)
 const currentUserId = 1;
 
 // Global liste af tasks – fyldes fra API

@@ -46,6 +46,13 @@ table {
     background-color: #ffffff;
 }
 
+.sort-controls{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin:10px 0 15px;
+}
+
 th, td {
     border: 1px solid #ccc;
     padding: 6px 8px;
