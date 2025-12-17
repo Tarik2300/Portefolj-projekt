@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - JTT Task Manager</title>
+</head>
+<body>
+    <h1>Login</h1>
+
+    <form id="loginForm">
+        <div>
+            <label for="username">Brugernavn:</label><br>
+            <input type="text" id="username" name="username" required>
+        </div>
+        <br>
+        <div>
+            <label for="password">Adgangskode:</label><br>
+            <input type="password" id="password" name="password" required>
+        </div>
+        <br>
+        <button type="submit">Log ind</button>
+    </form>
+
+    <p id="error" style="color: red;"></p>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorElement = document.getElementById('error');
+
+            errorElement.textContent = '';
+
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    errorElement.textContent = error.message || 'Ugyldigt brugernavn eller adgangskode';
+                    return;
+                }
+
+                const data = await response.json();
+
+                // Gem brugerdata i sessionStorage
+                sessionStorage.setItem('userId', data.userId);
+                sessionStorage.setItem('userName', data.name);
+                sessionStorage.setItem('userRole', data.role);
+
+                // Redirect baseret på rolle
+                if (data.role === 'TEAMLEAD') {
+                    window.location.href = 'admin.html';
+                } else {
+                    window.location.href = 'taskboard.html';
+                }
+
+            } catch (err) {
+                errorElement.textContent = 'Der opstod en fejl. Prøv igen.';
+                console.error('Login error:', err);
+            }
+        });
+    </script>
+</body>
+</html>
