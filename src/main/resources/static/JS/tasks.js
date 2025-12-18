@@ -297,7 +297,6 @@ function createTaskCard(task) {
 
     card.appendChild(details);
 
-    // knap til at arkivere HELE opgaven
     const archiveTaskBtn = document.createElement("button");
     archiveTaskBtn.textContent = "Arkivér opgave";
     archiveTaskBtn.classList.add("subtask-archive-btn"); // genbrug stil
