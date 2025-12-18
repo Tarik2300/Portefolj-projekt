@@ -70,24 +70,22 @@ async function loadTasks() {
         }
 
         const data = await response.json();
-        console.log("RAW API data:", data);
 
         tasks = data.map(t => ({
             id: t.id,
-            title: t.title ?? t.name ?? "(ingen titel)",
+            title: t.title ?? "(ingen titel)",
             description: t.description ?? "",
             status: t.status,
             priority: t.priority ?? null,
             deadline: t.deadline ?? null,
-            assignedToId: t.assignedToId ?? t.userId ?? t.assignedTo?.id ?? null,
-            subtasks: (t.subtasks ?? t.subTasks ?? []).map(st => ({
+            assignedToId: t.assignedToId,
+            subtasks: (t.subtasks ?? []).map(st => ({
                 id: st.id,
-                title: st.title ?? st.name ?? "",
-                status: st.status
+                description: st.description,
+                completed: st.completed
             }))
         }));
 
-        console.log("Mapped tasks:", tasks);
         renderTasks();
         setupDragAndDrop(); // important: (re)bind dropzones
     } catch (err) {
@@ -101,8 +99,8 @@ function createSubtaskRow(task, subtask) {
     const row = document.createElement("div");
     row.classList.add("subtask-row");
 
-    const label = document.createElement("span");
-    label.textContent = subtask.title;
+    const label = document.createElement("label");
+    label.textContent = subtask.description;
 
     const select = document.createElement("select");
     STATUS_FLOW.forEach(st => {
@@ -144,6 +142,7 @@ function createSubtaskRow(task, subtask) {
         const confirmed = confirm("Er du sikker på, at du vil arkivere denne subtask?");
         if (!confirmed) return;
 
+    checkbox.onchange = async () => {
         try {
             const response = await fetch(`/api/subtasks/${subtask.id}/archive`, {
                 method: "PATCH"
@@ -162,9 +161,8 @@ function createSubtaskRow(task, subtask) {
         }
     };
 
+    row.appendChild(checkbox);
     row.appendChild(label);
-    row.appendChild(select);
-    row.appendChild(archiveBtn);
     return row;
 }
 
@@ -173,88 +171,30 @@ function createSubtaskRow(task, subtask) {
 function createTaskCard(task) {
     const card = document.createElement("div");
     card.classList.add("task-card");
-    card.dataset.taskId = task.id;
 
-    // DnD: gør kortet draggable
-    card.draggable = true;
-    card.addEventListener("dragstart", () => {
-        draggedTaskId = task.id;
-    });
-
-    // ----- HEADER -----
     const header = document.createElement("div");
     header.classList.add("task-header");
 
     const titleEl = document.createElement("div");
-    titleEl.classList.add("task-title");
     titleEl.textContent = task.title;
 
-    const descEl = document.createElement("div");
-    descEl.classList.add("task-desc");
-    descEl.textContent = task.description;
-
-    const formattedDeadline = formatDeadline(task.deadline);
-    let deadlineEl = null;
-    if (formattedDeadline) {
-        deadlineEl = document.createElement("div");
-        deadlineEl.classList.add("task-deadline");
-        deadlineEl.textContent = `Deadline: ${formattedDeadline}`;
-    }
-
-    const formattedPriority = formatPriority(task.priority);
-    let priorityEl = null;
-    if (formattedPriority) {
-        priorityEl = document.createElement("div");
-        priorityEl.classList.add("task-priority");
-        priorityEl.textContent = `Prioritet: ${formattedPriority}`;
-    }
-
-    const statusBadge = document.createElement("span");
-    statusBadge.classList.add("task-status-badge");
-    statusBadge.textContent = task.status;
-
     header.appendChild(titleEl);
-    header.appendChild(descEl);
-    if (deadlineEl) header.appendChild(deadlineEl);
-    if (priorityEl) header.appendChild(priorityEl);
-    header.appendChild(statusBadge);
-
-    header.addEventListener("click", () => {
-        card.classList.toggle("expanded");
-    });
-
     card.appendChild(header);
 
-    // ----- DETAILS -----
     const details = document.createElement("div");
     details.classList.add("task-details");
 
     const subtaskContainer = document.createElement("div");
-    subtaskContainer.classList.add("subtask-container");
-
-    const subHeader = document.createElement("div");
-    subHeader.textContent = "Subtasks:";
-    subHeader.style.fontWeight = "bold";
-    subHeader.style.marginBottom = "4px";
-    subtaskContainer.appendChild(subHeader);
-
-    task.subtasks
-        .filter(st => st.status !== Status.ARCHIVED)
-        .forEach(st => subtaskContainer.appendChild(createSubtaskRow(task, st)));
-
+    task.subtasks.forEach(st =>
+        subtaskContainer.appendChild(createSubtaskRow(task, st))
+    );
     details.appendChild(subtaskContainer);
 
-    const inputWrapper = document.createElement("div");
-    inputWrapper.classList.add("subtask-input-wrapper");
-
     const input = document.createElement("input");
-    input.type = "text";
     input.placeholder = "Ny subtask...";
-    input.classList.add("subtask-input");
 
     const addBtn = document.createElement("button");
     addBtn.textContent = "+";
-    addBtn.classList.add("subtask-add-btn");
     addBtn.onclick = () => {
         if (!input.value.trim()) return;
         const newSubtask = {
@@ -280,20 +220,12 @@ function createTaskCard(task) {
     const statusText = document.createElement("span");
     statusText.textContent = `Status: "${task.status}"`;
 
-    const statusSelect = document.createElement("select");
-    STATUS_FLOW.forEach(st => {
-        const opt = document.createElement("option");
-        opt.value = st;
-        opt.textContent = st;
-        statusSelect.appendChild(opt);
-    });
-    statusSelect.value = task.status;
-
-    const saveBtn = document.createElement("button");
-    saveBtn.textContent = "Gem";
-    saveBtn.classList.add("task-status-save-btn");
-    saveBtn.onclick = async () => {
-        const newStatus = statusSelect.value;
+        // 🔧 RETTET HER
+        task.subtasks.push({
+            id: Date.now(),
+            description: input.value.trim(),
+            completed: false
+        });
 
         try {
             await updateTaskStatus(task.id, newStatus);
@@ -307,34 +239,19 @@ function createTaskCard(task) {
         }
     };
 
-    statusBar.appendChild(statusText);
-    statusBar.appendChild(statusSelect);
-    statusBar.appendChild(saveBtn);
-    details.appendChild(statusBar);
-
+    details.appendChild(input);
+    details.appendChild(addBtn);
     card.appendChild(details);
-
-    const archiveTaskBtn = document.createElement("button");
-    archiveTaskBtn.textContent = "Arkivér opgave";
-    archiveTaskBtn.classList.add("subtask-archive-btn");
-    archiveTaskBtn.onclick = () => archiveTask(task);
-
-    card.appendChild(archiveTaskBtn);
 
     return card;
 }
 
-// ===== RENDER HELE BOARD'ET =====
+// ===== RENDER =====
 
 function renderTasks() {
     const todoCol = document.getElementById("todo-column");
     const inprogressCol = document.getElementById("inprogress-column");
     const doneCol = document.getElementById("done-column");
-
-    if (!todoCol || !inprogressCol || !doneCol) {
-        console.error("Kolonner ikke fundet i DOM'en");
-        return;
-    }
 
     todoCol.innerHTML = "";
     inprogressCol.innerHTML = "";
@@ -344,87 +261,12 @@ function renderTasks() {
         .filter(t => t.status !== Status.ARCHIVED)
         .forEach(task => {
             const card = createTaskCard(task);
-            switch (task.status) {
-                case Status.TODO:
-                    todoCol.appendChild(card);
-                    break;
-                case Status.IN_PROGRESS:
-                    inprogressCol.appendChild(card);
-                    break;
-                case Status.DONE:
-                    doneCol.appendChild(card);
-                    break;
-                default:
-                    todoCol.appendChild(card);
-                    break;
-            }
+            if (task.status === Status.TODO) todoCol.appendChild(card);
+            else if (task.status === Status.IN_PROGRESS) inprogressCol.appendChild(card);
+            else doneCol.appendChild(card);
         });
 }
 
-// ===== DnD SETUP =====
-
-function setupDragAndDrop() {
-    const cols = document.querySelectorAll(".column-content[data-status]");
-    cols.forEach(col => {
-        col.addEventListener("dragover", (e) => {
-            e.preventDefault(); // nødvendig for at drop virker
-        });
-
-        col.addEventListener("drop", async (e) => {
-            e.preventDefault();
-
-            if (!draggedTaskId) return;
-
-            const targetStatus = col.dataset.status;
-            const task = tasks.find(t => t.id === draggedTaskId);
-            if (!task) return;
-
-            if (task.status === targetStatus) return;
-
-            const oldStatus = task.status;
-
-            try {
-                await updateTaskStatus(task.id, targetStatus);
-                task.status = targetStatus;
-                renderTasks();
-                setupDragAndDrop();
-            } catch (err) {
-                console.error(err);
-                task.status = oldStatus;
-                alert("Kunne ikke flytte task (status blev ikke gemt)");
-            } finally {
-                draggedTaskId = null;
-            }
-        });
-    });
-}
-
-// ===== ARKIVÉR TASK =====
-
-async function archiveTask(task) {
-    if (!confirm("Er du sikker på at du vil arkivere denne opgave?")) return;
-
-    try {
-        const response = await fetch(`/api/tasks/${task.id}/archive?userId=${currentUserId}`, {
-            method: "PATCH"
-        });
-
-        if (!response.ok) {
-            alert("Fejl ved arkivering af opgave");
-            return;
-        }
-
-        const archived = await response.json();
-        task.status = archived.status; // ARCHIVED
-
-        renderTasks();
-        setupDragAndDrop();
-    } catch (err) {
-        console.error("Kunne ikke arkivere:", err);
-        alert("Der opstod en fejl – se console");
-    }
-}
-
-// ===== INIT =====
+// ===== INIT =
 
 loadTasks();
