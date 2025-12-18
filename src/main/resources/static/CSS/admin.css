@@ -83,7 +83,6 @@ h1 {
     min-height: 70px;
 }
 
-/* Make description span full width if it exists as textarea */
 #task-desc {
     grid-column: 1 / -1;
 }
@@ -117,7 +116,6 @@ button:active,
     transform: translateY(0px);
 }
 
-/* Archive button a bit more “warning-like” without changing palette too much */
 .archive-btn {
     background-color: brown;
 }
@@ -200,6 +198,23 @@ button:active,
     word-wrap: break-word;
     white-space: normal;
 }
+
+.table-input,
+.table-select,
+.table-textarea {
+    width: 100%;
+    border: 2px solid #000;
+    border-radius: 10px;
+    padding: 7px 9px;
+    font-family: "Georgia", serif;
+    font-size: 14px;
+    background: #fff;
+}
+
+.table-textarea {
+    resize: vertical;
+}
+
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 820px) {
