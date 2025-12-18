@@ -185,7 +185,7 @@ async function archiveTask(id) {
     }
 }
 
-// ===== SORTERING =====
+// ===== SORTERING ====
 
 function getUserLabelForSort(assignedToId) {
     const user = users.find(u => u.id === assignedToId);
