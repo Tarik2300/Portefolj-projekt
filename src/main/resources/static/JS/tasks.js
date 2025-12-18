@@ -425,6 +425,6 @@ async function archiveTask(task) {
     }
 }
 
-// ===== INIT =====
+// ===== INIT =
 
 loadTasks();
