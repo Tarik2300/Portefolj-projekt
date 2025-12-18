@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Admin – Task Manager</title>
-  <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="CSS/admin.css">
 </head>
 <body>
 
@@ -13,27 +13,22 @@
   <h2>Opret ny task</h2>
 
   <form id="create-task-form" class="task-form">
-    <!-- Bruger -->
     <label for="user-select">
       Bruger:
       <select id="user-select" name="assignedToId" required>
         <option value="">Vælg medarbejder...</option>
       </select>
     </label>
-
-    <!-- Titel -->
     <label for="task-title">
       Titel:
       <input type="text" id="task-title" name="title" required>
     </label>
 
-    <!-- Beskrivelse -->
     <label for="task-desc">
       Beskrivelse:
       <textarea id="task-desc" name="description" rows="3" required></textarea>
     </label>
 
-    <!-- PRIORITET (NYT) -->
     <label for="task-priority">
       Prioritet:
       <select id="task-priority" name="priority">
@@ -44,7 +39,6 @@
       </select>
     </label>
 
-    <!-- DEADLINE (NYT) -->
     <label for="task-deadline">
       Deadline:
       <input type="date" id="task-deadline" name="deadline">
@@ -56,6 +50,18 @@
 
 <section class="admin-section">
   <h2>Alle tasks</h2>
+
+  <div class="sort-controls">
+    <label for="sort-by">Sorter efter:</label>
+    <select id="sort-by">
+      <option value="id" selected>ID</option>
+      <option value="user">Medarbejder</option>
+      <option value="priority">Prioritet</option>
+    </select>
+
+    <button type="button" id="sort-dir" data-dir="asc">Stigende ↑</button>
+  </div>
+
 
   <table id="task-table">
     <thead>
