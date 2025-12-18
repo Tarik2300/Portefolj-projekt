@@ -4,70 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - JTT Task Manager</title>
+    <link rel="stylesheet" href="CSS/auth.css">
 </head>
 <body>
-    <h1>Login</h1>
 
-    <form id="loginForm">
-        <div>
-            <label for="username">Brugernavn:</label><br>
-            <input type="text" id="username" name="username" required>
-        </div>
-        <br>
-        <div>
-            <label for="password">Adgangskode:</label><br>
-            <input type="password" id="password" name="password" required>
-        </div>
-        <br>
-        <button type="submit">Log ind</button>
-    </form>
+<div class="page-wrapper">
+    <div class="card">
+        <h1 class="app-title">Login</h1>
 
-    <p id="error" style="color: red;"></p>
+        <form id="loginForm" class="form">
+            <label>
+                Brugernavn
+                <input type="text" id="username" required>
+            </label>
 
-    <script>
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
+            <label>
+                Adgangskode
+                <input type="password" id="password" required>
+            </label>
 
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            const errorElement = document.getElementById('error');
+            <button type="submit" class="primary-btn">
+                Log ind
+            </button>
+        </form>
 
-            errorElement.textContent = '';
+        <p id="error" class="error-text"></p>
+    </div>
+</div>
 
-            try {
-                const response = await fetch('/api/login', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ username, password })
-                });
+<script src="JS/login.js"></script>
 
-                if (!response.ok) {
-                    const error = await response.json();
-                    errorElement.textContent = error.message || 'Ugyldigt brugernavn eller adgangskode';
-                    return;
-                }
-
-                const data = await response.json();
-
-                // Gem brugerdata i sessionStorage
-                sessionStorage.setItem('userId', data.userId);
-                sessionStorage.setItem('userName', data.name);
-                sessionStorage.setItem('userRole', data.role);
-
-                // Redirect baseret på rolle
-                if (data.role === 'TEAMLEAD') {
-                    window.location.href = 'admin.html';
-                } else {
-                    window.location.href = 'taskboard.html';
-                }
-
-            } catch (err) {
-                errorElement.textContent = 'Der opstod en fejl. Prøv igen.';
-                console.error('Login error:', err);
-            }
-        });
-    </script>
 </body>
 </html>
