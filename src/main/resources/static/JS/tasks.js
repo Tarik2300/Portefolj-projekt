@@ -13,6 +13,9 @@ const currentUserId = 1;
 
 let tasks = [];
 
+// DnD state
+let draggedTaskId = null;
+
 // ===== HJÆLPERE =====
 
 function formatDeadline(isoDateString) {
@@ -39,6 +42,22 @@ function formatPriority(priority) {
         default:
             return priority;
     }
+}
+
+// ===== API HELPERS =====
+
+async function updateTaskStatus(taskId, newStatus) {
+    const response = await fetch(`/api/tasks/${taskId}/status?userId=${currentUserId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus })
+    });
+
+    if (!response.ok) {
+        throw new Error("Fejl ved opdatering af task-status: " + response.status);
+    }
+
+    return await response.json();
 }
 
 // ===== API-LOAD =====
@@ -70,6 +89,7 @@ async function loadTasks() {
 
         console.log("Mapped tasks:", tasks);
         renderTasks();
+        setupDragAndDrop(); // important: (re)bind dropzones
     } catch (err) {
         console.error("Fejl i loadTasks:", err);
     }
@@ -109,6 +129,7 @@ function createSubtaskRow(task, subtask) {
 
             subtask.status = newStatus;
             renderTasks();
+            setupDragAndDrop();
         } catch (err) {
             console.error(err);
             alert("Kunne ikke opdatere subtask-status");
@@ -121,9 +142,7 @@ function createSubtaskRow(task, subtask) {
     archiveBtn.classList.add("subtask-archive-btn");
     archiveBtn.onclick = async () => {
         const confirmed = confirm("Er du sikker på, at du vil arkivere denne subtask?");
-        if (!confirmed) {
-            return;
-        }
+        if (!confirmed) return;
 
         try {
             const response = await fetch(`/api/subtasks/${subtask.id}/archive`, {
@@ -136,6 +155,7 @@ function createSubtaskRow(task, subtask) {
 
             subtask.status = Status.ARCHIVED;
             renderTasks();
+            setupDragAndDrop();
         } catch (err) {
             console.error(err);
             alert("Kunne ikke arkivere subtask");
@@ -154,6 +174,12 @@ function createTaskCard(task) {
     const card = document.createElement("div");
     card.classList.add("task-card");
     card.dataset.taskId = task.id;
+
+    // DnD: gør kortet draggable
+    card.draggable = true;
+    card.addEventListener("dragstart", () => {
+        draggedTaskId = task.id;
+    });
 
     // ----- HEADER -----
     const header = document.createElement("div");
@@ -203,7 +229,6 @@ function createTaskCard(task) {
     const details = document.createElement("div");
     details.classList.add("task-details");
 
-    // subtasks
     const subtaskContainer = document.createElement("div");
     subtaskContainer.classList.add("subtask-container");
 
@@ -233,14 +258,14 @@ function createTaskCard(task) {
     addBtn.onclick = () => {
         if (!input.value.trim()) return;
         const newSubtask = {
-            id: Date.now(), // midlertidigt ID – backend vil lave rigtigt ID senere
+            id: Date.now(),
             title: input.value.trim(),
             status: Status.TODO
         };
         task.subtasks.push(newSubtask);
         input.value = "";
-        // TODO: POST /api/tasks/{taskId}/subtasks
         renderTasks();
+        setupDragAndDrop();
         const cardAgain = document.querySelector(`[data-task-id="${task.id}"]`);
         if (cardAgain) cardAgain.classList.add("expanded");
     };
@@ -271,18 +296,10 @@ function createTaskCard(task) {
         const newStatus = statusSelect.value;
 
         try {
-            const response = await fetch(`/api/tasks/${task.id}/status`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ status: newStatus })
-            });
-
-            if (!response.ok) {
-                throw new Error("Fejl ved opdatering af task-status: " + response.status);
-            }
-
+            await updateTaskStatus(task.id, newStatus);
             task.status = newStatus;
             renderTasks();
+            setupDragAndDrop();
         } catch (err) {
             console.error(err);
             alert("Kunne ikke opdatere task-status");
@@ -299,7 +316,7 @@ function createTaskCard(task) {
 
     const archiveTaskBtn = document.createElement("button");
     archiveTaskBtn.textContent = "Arkivér opgave";
-    archiveTaskBtn.classList.add("subtask-archive-btn"); // genbrug stil
+    archiveTaskBtn.classList.add("subtask-archive-btn");
     archiveTaskBtn.onclick = () => archiveTask(task);
 
     card.appendChild(archiveTaskBtn);
@@ -344,6 +361,46 @@ function renderTasks() {
         });
 }
 
+// ===== DnD SETUP =====
+
+function setupDragAndDrop() {
+    const cols = document.querySelectorAll(".column-content[data-status]");
+    cols.forEach(col => {
+        col.addEventListener("dragover", (e) => {
+            e.preventDefault(); // nødvendig for at drop virker
+        });
+
+        col.addEventListener("drop", async (e) => {
+            e.preventDefault();
+
+            if (!draggedTaskId) return;
+
+            const targetStatus = col.dataset.status;
+            const task = tasks.find(t => t.id === draggedTaskId);
+            if (!task) return;
+
+            if (task.status === targetStatus) return;
+
+            const oldStatus = task.status;
+
+            try {
+                await updateTaskStatus(task.id, targetStatus);
+                task.status = targetStatus;
+                renderTasks();
+                setupDragAndDrop();
+            } catch (err) {
+                console.error(err);
+                task.status = oldStatus;
+                alert("Kunne ikke flytte task (status blev ikke gemt)");
+            } finally {
+                draggedTaskId = null;
+            }
+        });
+    });
+}
+
+// ===== ARKIVÉR TASK =====
+
 async function archiveTask(task) {
     if (!confirm("Er du sikker på at du vil arkivere denne opgave?")) return;
 
@@ -360,13 +417,13 @@ async function archiveTask(task) {
         const archived = await response.json();
         task.status = archived.status; // ARCHIVED
 
-        renderTasks(); // Fjerner kortet fra boardet
+        renderTasks();
+        setupDragAndDrop();
     } catch (err) {
         console.error("Kunne ikke arkivere:", err);
         alert("Der opstod en fejl – se console");
     }
 }
-
 
 // ===== INIT =====
 
