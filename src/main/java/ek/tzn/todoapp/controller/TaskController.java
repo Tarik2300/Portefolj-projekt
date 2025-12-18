@@ -4,6 +4,8 @@ import ek.tzn.todoapp.dto.request.CreateTaskRequest;
 import ek.tzn.todoapp.dto.request.StatusUpdateRequest;
 import ek.tzn.todoapp.dto.request.UpdateTaskRequest;
 import ek.tzn.todoapp.dto.response.TaskResponse;
+import ek.tzn.todoapp.entity.enums.Priority;
+import ek.tzn.todoapp.entity.enums.Status;
 import ek.tzn.todoapp.service.TaskService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -22,8 +24,12 @@ public class TaskController {
     }
 
     @GetMapping
-    public List<TaskResponse> getAllTasks(@RequestParam(required = false) Long assignedToId) {
-        return taskService.getAllTasks(assignedToId);
+    public List<TaskResponse> getAllTasks(
+            @RequestParam(required = false) Status status,
+            @RequestParam(required = false) Priority priority,
+            @RequestParam(required = false) Long assignedToId
+    ) {
+        return taskService.getAllTasks(status, priority, assignedToId);
     }
 
     @GetMapping("/my")

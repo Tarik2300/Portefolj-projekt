@@ -5,6 +5,7 @@ import ek.tzn.todoapp.dto.request.UpdateTaskRequest;
 import ek.tzn.todoapp.dto.response.TaskResponse;
 import ek.tzn.todoapp.entity.Task;
 import ek.tzn.todoapp.entity.User;
+import ek.tzn.todoapp.entity.enums.Priority;
 import ek.tzn.todoapp.entity.enums.Status;
 import ek.tzn.todoapp.exception.ResourceNotFoundException;
 import ek.tzn.todoapp.repository.TaskRepository;
@@ -26,13 +27,32 @@ public class TaskService {
         this.userRepository = userRepository;
     }
 
-    public List<TaskResponse> getAllTasks(Long assignedToId) {
+    public List<TaskResponse> getAllTasks(Status status, Priority priority, Long assignedToId) {
         List<Task> tasks;
-        if (assignedToId != null) {
+
+        // Tjek hvilke parametre der er sat og vælg den rigtige metode
+        boolean hasStatus = status != null;
+        boolean hasPriority = priority != null;
+        boolean hasAssignedTo = assignedToId != null;
+
+        if (hasStatus && hasPriority && hasAssignedTo) {
+            tasks = taskRepository.findByStatusAndPriorityAndAssignedToId(status, priority, assignedToId);
+        } else if (hasStatus && hasPriority) {
+            tasks = taskRepository.findByStatusAndPriority(status, priority);
+        } else if (hasStatus && hasAssignedTo) {
+            tasks = taskRepository.findByStatusAndAssignedToId(status, assignedToId);
+        } else if (hasPriority && hasAssignedTo) {
+            tasks = taskRepository.findByPriorityAndAssignedToId(priority, assignedToId);
+        } else if (hasStatus) {
+            tasks = taskRepository.findByStatus(status);
+        } else if (hasPriority) {
+            tasks = taskRepository.findByPriority(priority);
+        } else if (hasAssignedTo) {
             tasks = taskRepository.findByAssignedToId(assignedToId);
         } else {
             tasks = taskRepository.findAll();
         }
+
         return tasks.stream().map(TaskResponse::fromEntity).toList();
     }
 
