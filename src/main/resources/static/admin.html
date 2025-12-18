@@ -62,6 +62,22 @@
     <button type="button" id="sort-dir" data-dir="asc">Stigende ↑</button>
   </div>
 
+  <div class="filter-controls">
+    <label for="filter-user">Filtrer bruger:</label>
+    <select id="filter-user">
+      <option value="">Alle</option>
+    </select>
+
+    <label for="filter-status">Filtrer status:</label>
+    <select id="filter-status">
+      <option value="">Alle</option>
+      <option value="TODO">TODO</option>
+      <option value="IN_PROGRESS">IN_PROGRESS</option>
+      <option value="DONE">DONE</option>
+      <option value="ARCHIVED">ARCHIVED</option>
+    </select>
+  </div>
+
 
   <table id="task-table">
     <thead>
