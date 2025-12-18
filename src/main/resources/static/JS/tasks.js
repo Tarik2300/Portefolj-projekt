@@ -11,21 +11,19 @@ const STATUS_FLOW = [Status.TODO, Status.IN_PROGRESS, Status.DONE];
 
 const currentUserId = 1;
 
-// Global liste af tasks – fyldes fra API
 let tasks = [];
 
 // ===== HJÆLPERE =====
 
-// Forventer ISO-dato fra backend: "2025-12-10"
 function formatDeadline(isoDateString) {
     if (!isoDateString) return null;
 
     const parts = isoDateString.split("-");
     if (parts.length >= 3) {
         const [yyyy, mm, dd] = parts;
-        return `${dd}-${mm}-${yyyy}`; // dansk format dd-MM-yyyy
+        return `${dd}-${mm}-${yyyy}`;
     }
-    return isoDateString; // fallback hvis format er anderledes
+    return isoDateString;
 }
 
 function formatPriority(priority) {
@@ -39,7 +37,7 @@ function formatPriority(priority) {
         case "HIGH":
             return "Høj";
         default:
-            return priority; // fallback hvis der kommer noget andet
+            return priority;
     }
 }
 
@@ -47,7 +45,6 @@ function formatPriority(priority) {
 
 async function loadTasks() {
     try {
-        // Brug dit "mine tasks"-endpoint
         const response = await fetch(`/api/tasks/my?userId=${currentUserId}`);
         if (!response.ok) {
             throw new Error("Fejl ved hentning af tasks: " + response.status);
@@ -56,7 +53,6 @@ async function loadTasks() {
         const data = await response.json();
         console.log("RAW API data:", data);
 
-        // Map TaskResponse -> frontend-model
         tasks = data.map(t => ({
             id: t.id,
             title: t.title ?? t.name ?? "(ingen titel)",
@@ -64,9 +60,7 @@ async function loadTasks() {
             status: t.status,
             priority: t.priority ?? null,
             deadline: t.deadline ?? null,
-            // hvis TaskResponse har assignedToId eller embedded user
             assignedToId: t.assignedToId ?? t.userId ?? t.assignedTo?.id ?? null,
-            // subtasks kan hedde subtasks eller subTasks afhængigt af din DTO
             subtasks: (t.subtasks ?? t.subTasks ?? []).map(st => ({
                 id: st.id,
                 title: st.title ?? st.name ?? "",
@@ -90,7 +84,6 @@ function createSubtaskRow(task, subtask) {
     const label = document.createElement("span");
     label.textContent = subtask.title;
 
-    // dropdown til subtask-status
     const select = document.createElement("select");
     STATUS_FLOW.forEach(st => {
         const opt = document.createElement("option");
@@ -100,7 +93,6 @@ function createSubtaskRow(task, subtask) {
     });
     select.value = subtask.status;
 
-    // PATCH ved status-skift
     select.onchange = async () => {
         const newStatus = select.value;
 
@@ -163,7 +155,7 @@ function createTaskCard(task) {
     card.classList.add("task-card");
     card.dataset.taskId = task.id;
 
-    // ----- HEADER (altid synlig) -----
+    // ----- HEADER -----
     const header = document.createElement("div");
     header.classList.add("task-header");
 
@@ -175,7 +167,6 @@ function createTaskCard(task) {
     descEl.classList.add("task-desc");
     descEl.textContent = task.description;
 
-    // deadline-linje (hvis der er deadline)
     const formattedDeadline = formatDeadline(task.deadline);
     let deadlineEl = null;
     if (formattedDeadline) {
@@ -184,7 +175,6 @@ function createTaskCard(task) {
         deadlineEl.textContent = `Deadline: ${formattedDeadline}`;
     }
 
-    // NYT: prioritet-linje (hvis der er prioritet)
     const formattedPriority = formatPriority(task.priority);
     let priorityEl = null;
     if (formattedPriority) {
@@ -203,14 +193,13 @@ function createTaskCard(task) {
     if (priorityEl) header.appendChild(priorityEl);
     header.appendChild(statusBadge);
 
-    // klik på header = expand/collapse
     header.addEventListener("click", () => {
         card.classList.toggle("expanded");
     });
 
     card.appendChild(header);
 
-    // ----- DETAILS (subtasks + statusstyring) -----
+    // ----- DETAILS -----
     const details = document.createElement("div");
     details.classList.add("task-details");
 
@@ -230,7 +219,6 @@ function createTaskCard(task) {
 
     details.appendChild(subtaskContainer);
 
-    // input til ny subtask
     const inputWrapper = document.createElement("div");
     inputWrapper.classList.add("subtask-input-wrapper");
 
@@ -261,7 +249,6 @@ function createTaskCard(task) {
     inputWrapper.appendChild(addBtn);
     details.appendChild(inputWrapper);
 
-    // status-bar nederst (for task)
     const statusBar = document.createElement("div");
     statusBar.classList.add("task-status-bar");
 
