@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - JTT Task Manager</title>
+    <link rel="stylesheet" href="CSS/auth.css">
+</head>
+<body>
+
+<div class="page-wrapper">
+    <div class="card">
+        <h1 class="app-title">Login</h1>
+
+        <form id="loginForm" class="form">
+            <label>
+                Brugernavn
+                <input type="text" id="username" required>
+            </label>
+
+            <label>
+                Adgangskode
+                <input type="password" id="password" required>
+            </label>
+
+            <button type="submit" class="primary-btn">
+                Log ind
+            </button>
+        </form>
+
+        <p id="error" class="error-text"></p>
+    </div>
+</div>
+
+<script src="JS/login.js"></script>
+
+</body>
+</html>
