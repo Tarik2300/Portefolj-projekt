@@ -16,16 +16,20 @@ public record TaskResponse(
     Long assignedToId,
     List<SubtaskResponse> subtasks
 ) {
+
     public static TaskResponse fromEntity(Task task) {
         return new TaskResponse(
-            task.getId(),
-            task.getTitle(),
-            task.getDescription(),
-            task.getPriority(),
-            task.getDeadline(),
-            task.getStatus(),
-            task.getAssignedTo().getId(),
-            null
+                task.getId(),
+                task.getTitle(),
+                task.getDescription(),
+                task.getPriority(),
+                task.getDeadline(),
+                task.getStatus(),
+                task.getAssignedTo().getId(),
+                task.getSubtasks() == null ? List.of()
+                        : task.getSubtasks().stream()
+                        .map(SubtaskResponse::fromEntity)
+                        .toList()
         );
     }
 }
