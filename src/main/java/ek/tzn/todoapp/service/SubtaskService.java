@@ -10,6 +10,8 @@ import ek.tzn.todoapp.repository.SubtaskRepository;
 import ek.tzn.todoapp.repository.TaskRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class SubtaskService {
 
@@ -61,5 +63,14 @@ public class SubtaskService {
         if (!task.getAssignedTo().getId().equals(userId)) {
             throw new UnauthorizedException("Du kan ikke ændre subtasks på en opgave, der ikke er din.");
         }
+    }
+
+    public List<SubtaskResponse> getSubtasksForTask(Long taskId, Long userId) {
+        Task task = findTaskById(taskId);
+        checkOwnership(task, userId);
+
+        return subtaskRepository.findByTask_IdOrderByIdAsc(taskId).stream()
+                .map(SubtaskResponse::fromEntity)
+                .toList();
     }
 }
