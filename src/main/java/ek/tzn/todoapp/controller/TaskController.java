@@ -51,7 +51,7 @@ public class TaskController {
         taskService.deleteTask(id);
         return ResponseEntity.noContent().build();
     }
-    // OBS: Rettet til at sende userId med
+
     @PatchMapping("/{id}/status")
     public TaskResponse updateStatus(
             @PathVariable Long id,
