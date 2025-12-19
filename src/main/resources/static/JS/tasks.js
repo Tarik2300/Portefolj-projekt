@@ -1,4 +1,4 @@
-// ===== ENUMS &  KONFIG =====
+// ===== ENUMS & KONFIG =====
 
 const Status = {
     TODO: "TODO",
@@ -275,6 +275,11 @@ function createTaskCard(task) {
     archiveTaskBtn.onclick = () => archiveTask(task);
 
     card.appendChild(archiveTaskBtn);
+
+    // Toggle expanded class for showing details
+    card.addEventListener("click", () => {
+        card.classList.toggle("expanded");
+    });
 
     return card;
 }
