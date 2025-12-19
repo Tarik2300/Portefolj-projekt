@@ -9,13 +9,29 @@ const Status = {
 
 const STATUS_FLOW = [Status.TODO, Status.IN_PROGRESS, Status.DONE];
 
-const currentUserId = 1;
+// subtask dropdown værdier
+const SubtaskStatus = {
+    TODO: "TODO",
+    DONE: "DONE"
+};
+
+const currentUserId = Number(sessionStorage.getItem("userId"));
+if (!currentUserId) window.location.href = "/login";
+
+// ===== STATE =====
 
 let tasks = [];
-
-// DnD state
 let draggedTaskId = null;
 let dndInitialized = false;
+
+// ===== FETCH HELPER =====
+
+async function apiFetch(url, options = {}) {
+    return fetch(url, {
+        credentials: "include",
+        ...options
+    });
+}
 
 // ===== HJÆLPERE =====
 
@@ -34,45 +50,101 @@ function formatPriority(priority) {
     if (!priority) return null;
 
     switch (priority) {
-        case "LOW":
-            return "Lav";
-        case "MEDIUM":
-            return "Mellem";
-        case "HIGH":
-            return "Høj";
-        default:
-            return priority;
+        case "LOW": return "Lav";
+        case "MEDIUM": return "Mellem";
+        case "HIGH": return "Høj";
+        default: return priority;
     }
 }
 
-// ===== API HELPERS =====
+// ===== API =====
 
 async function updateTaskStatus(taskId, newStatus) {
-    const response = await fetch(`/api/tasks/${taskId}/status?userId=${currentUserId}`, {
+    const res = await apiFetch(`/api/tasks/${taskId}/status?userId=${currentUserId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus })
     });
 
-    if (!response.ok) {
-        throw new Error("Fejl ved opdatering af task-status: " + response.status);
-    }
-
-    return await response.json();
+    if (!res.ok) throw new Error("Fejl ved opdatering af task-status: " + res.status);
+    return await res.json();
 }
 
-// ===== API-LOAD =====
+async function archiveTask(task) {
+    if (!confirm("Er du sikker på at du vil arkivere denne opgave?")) return;
+
+    const res = await apiFetch(`/api/tasks/${task.id}/archive?userId=${currentUserId}`, {
+        method: "PATCH"
+    });
+
+    if (!res.ok) {
+        alert("Fejl ved arkivering af opgave");
+        return;
+    }
+
+    const archived = await res.json();
+    task.status = archived.status;
+    renderTasks();
+}
+
+// --- Subtasks: hent pr. task (løser “kun 1 subtask” problemet) ---
+async function loadSubtasksForTask(taskId) {
+    const res = await apiFetch(`/api/tasks/${taskId}/subtasks?userId=${currentUserId}`);
+    if (!res.ok) throw new Error(`Kunne ikke hente subtasks for task ${taskId}: ${res.status}`);
+
+    const data = await res.json();
+    return (data ?? []).map(st => ({
+        id: st.id,
+        description: st.description ?? "",
+        completed: !!st.completed
+    }));
+}
+
+// --- Subtasks: opret ---
+async function createSubtask(taskId, description) {
+    const res = await apiFetch(`/api/tasks/${taskId}/subtasks?userId=${currentUserId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description })
+    });
+
+    if (!res.ok) throw new Error("Kunne ikke oprette subtask: " + res.status);
+    return await res.json(); // forventer {id, description, completed}
+}
+
+// --- Subtasks: opdater completed (robust) ---
+// Prøver først dit gamle endpoint med query-param.
+// Hvis backend i virkeligheden forventer body eller andet endpoint, prøver den variant B.
+async function setSubtaskCompleted(subtaskId, completed) {
+    // A) din nuværende stil (query param)
+    let res = await apiFetch(
+        `/api/subtasks/${subtaskId}/status?userId=${currentUserId}&completed=${completed}`,
+        { method: "PATCH" }
+    );
+
+    if (res.ok) return true;
+
+    // B) fallback: JSON body (typisk Spring)
+    res = await apiFetch(`/api/subtasks/${subtaskId}?userId=${currentUserId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ completed })
+    });
+
+    if (!res.ok) throw new Error("Kunne ikke opdatere subtask: " + res.status);
+    return true;
+}
+
+// ===== LOAD TASKS =====
 
 async function loadTasks() {
     try {
-        const response = await fetch(`/api/tasks/my?userId=${currentUserId}`);
-        if (!response.ok) {
-            throw new Error("Fejl ved hentning af tasks: " + response.status);
-        }
+        const res = await apiFetch(`/api/tasks/my?userId=${currentUserId}`);
+        if (!res.ok) throw new Error("Fejl ved hentning af tasks: " + res.status);
 
-        const data = await response.json();
+        const data = await res.json();
 
-        tasks = data.map(t => ({
+        tasks = (data ?? []).map(t => ({
             id: t.id,
             title: t.title ?? "(ingen titel)",
             description: t.description ?? "",
@@ -80,71 +152,149 @@ async function loadTasks() {
             priority: t.priority ?? null,
             deadline: t.deadline ?? null,
             assignedToId: t.assignedToId,
-            subtasks: (t.subtasks ?? []).map(st => ({
-                id: st.id,
-                description: st.description,
-                completed: st.completed
-            }))
+            subtasks: [] // vi loader dem separat lige efter
+        }));
+
+        // 🔥 Vigtigt: hent subtasks pr. task, så du får ALLE med (ikke kun 1)
+        await Promise.all(tasks.map(async (task) => {
+            try {
+                task.subtasks = await loadSubtasksForTask(task.id);
+            } catch (e) {
+                console.warn(e);
+                task.subtasks = [];
+            }
         }));
 
         renderTasks();
 
-        // Bind DnD events kun én gang (undgår stacked listeners/alerts)
         if (!dndInitialized) {
             setupDragAndDrop();
             dndInitialized = true;
         }
     } catch (err) {
         console.error("Fejl i loadTasks:", err);
+        alert("Kunne ikke hente tasks – se console");
     }
 }
 
-// ===== HELPERS TIL RENDER =====
+// ===== SUBTASK UI (dropdown TODO/DONE) =====
 
 function createSubtaskRow(task, subtask) {
     const row = document.createElement("div");
     row.classList.add("subtask-row");
 
-    const checkbox = document.createElement("input");
-    checkbox.type = "checkbox";
-    checkbox.checked = !!subtask.completed;
+    const left = document.createElement("div");
+    left.classList.add("subtask-left");
+    left.addEventListener("click", (e) => e.stopPropagation());
 
-    const label = document.createElement("label");
-    label.textContent = subtask.description;
+    const text = document.createElement("span");
+    text.classList.add("subtask-label");
+    text.textContent = subtask.description;
 
-    checkbox.onchange = async () => {
+    const select = document.createElement("select");
+    select.classList.add("subtask-status-select");
+    select.addEventListener("click", (e) => e.stopPropagation());
+
+    const optTodo = document.createElement("option");
+    optTodo.value = SubtaskStatus.TODO;
+    optTodo.textContent = "TODO";
+
+    const optDone = document.createElement("option");
+    optDone.value = SubtaskStatus.DONE;
+    optDone.textContent = "DONE";
+
+    select.appendChild(optTodo);
+    select.appendChild(optDone);
+
+    // map boolean <-> dropdown
+    select.value = subtask.completed ? SubtaskStatus.DONE : SubtaskStatus.TODO;
+
+    select.onchange = async () => {
+        const oldCompleted = subtask.completed;
+        const newCompleted = select.value === SubtaskStatus.DONE;
+
+        // optimistic
+        subtask.completed = newCompleted;
+
         try {
-            const response = await fetch(
-                `/api/subtasks/${subtask.id}/status?userId=${currentUserId}&completed=${checkbox.checked}`,
-                { method: "PATCH" }
-            );
-
-            if (!response.ok) throw new Error("Kunne ikke opdatere subtask");
-
-            subtask.completed = checkbox.checked;
+            await setSubtaskCompleted(subtask.id, newCompleted);
         } catch (err) {
             console.error(err);
-            checkbox.checked = !checkbox.checked; // rollback
+            // rollback
+            subtask.completed = oldCompleted;
+            select.value = oldCompleted ? SubtaskStatus.DONE : SubtaskStatus.TODO;
             alert("Fejl ved opdatering af subtask");
         }
     };
 
-    row.appendChild(checkbox);
-    row.appendChild(label);
+    left.appendChild(text);
+    row.appendChild(left);
+    row.appendChild(select);
+
     return row;
 }
 
-// ===== Opret ét task-kort =====
+function createAddSubtaskUI(task) {
+    const wrapper = document.createElement("div");
+    wrapper.classList.add("subtask-input-wrapper");
+    wrapper.addEventListener("click", (e) => e.stopPropagation());
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.placeholder = "Ny subtask...";
+    input.classList.add("subtask-input");
+    input.addEventListener("click", (e) => e.stopPropagation());
+
+    const btn = document.createElement("button");
+    btn.textContent = "+";
+    btn.classList.add("subtask-add-btn");
+    btn.addEventListener("click", (e) => e.stopPropagation());
+
+    const add = async () => {
+        const text = input.value.trim();
+        if (!text) return;
+
+        btn.disabled = true;
+        try {
+            const created = await createSubtask(task.id, text);
+
+            task.subtasks.push({
+                id: created.id,
+                description: created.description ?? text,
+                completed: !!created.completed
+            });
+
+            input.value = "";
+            renderTasks();
+        } catch (err) {
+            console.error(err);
+            alert("Kunne ikke oprette subtask (mangler POST/route?)");
+        } finally {
+            btn.disabled = false;
+        }
+    };
+
+    input.addEventListener("keydown", (e) => {
+        e.stopPropagation();
+        if (e.key === "Enter") add();
+    });
+
+    btn.onclick = add;
+
+    wrapper.appendChild(input);
+    wrapper.appendChild(btn);
+    return wrapper;
+}
+
+// ===== TASK CARD =====
 
 function createTaskCard(task) {
     const card = document.createElement("div");
     card.classList.add("task-card");
 
-    // DnD: gør kortet draggable
+    // DnD
     card.draggable = true;
-    card.addEventListener("dragstart", () => {
-        draggedTaskId = task.id;
-    });
+    card.addEventListener("dragstart", () => { draggedTaskId = task.id; });
 
     const header = document.createElement("div");
     header.classList.add("task-header");
@@ -180,7 +330,6 @@ function createTaskCard(task) {
     header.appendChild(titleEl);
     header.appendChild(descEl);
     header.appendChild(statusBadge);
-
     card.appendChild(header);
 
     const details = document.createElement("div");
@@ -191,44 +340,16 @@ function createTaskCard(task) {
     subtaskContainer.classList.add("subtask-container");
 
     const subHeader = document.createElement("div");
+    subHeader.classList.add("subtask-header");
     subHeader.textContent = "Subtasks:";
-    subHeader.style.fontWeight = "bold";
-    subHeader.style.marginBottom = "4px";
     subtaskContainer.appendChild(subHeader);
 
     task.subtasks.forEach(st => subtaskContainer.appendChild(createSubtaskRow(task, st)));
+    subtaskContainer.appendChild(createAddSubtaskUI(task));
+
     details.appendChild(subtaskContainer);
 
-    // ny subtask input (frontend-only indtil POST endpoint)
-    const inputWrapper = document.createElement("div");
-    inputWrapper.classList.add("subtask-input-wrapper");
-
-    const input = document.createElement("input");
-    input.type = "text";
-    input.placeholder = "Ny subtask...";
-    input.classList.add("subtask-input");
-
-    const addBtn = document.createElement("button");
-    addBtn.textContent = "+";
-    addBtn.classList.add("subtask-add-btn");
-    addBtn.onclick = () => {
-        if (!input.value.trim()) return;
-
-        task.subtasks.push({
-            id: Date.now(),
-            description: input.value.trim(),
-            completed: false
-        });
-
-        input.value = "";
-        renderTasks();
-    };
-
-    inputWrapper.appendChild(input);
-    inputWrapper.appendChild(addBtn);
-    details.appendChild(inputWrapper);
-
-    // task status select + gem
+    // status bar
     const statusBar = document.createElement("div");
     statusBar.classList.add("task-status-bar");
 
@@ -236,6 +357,8 @@ function createTaskCard(task) {
     statusText.textContent = `Status: "${task.status}"`;
 
     const statusSelect = document.createElement("select");
+    statusSelect.addEventListener("click", (e) => e.stopPropagation());
+
     STATUS_FLOW.forEach(st => {
         const opt = document.createElement("option");
         opt.value = st;
@@ -247,9 +370,10 @@ function createTaskCard(task) {
     const saveBtn = document.createElement("button");
     saveBtn.textContent = "Gem";
     saveBtn.classList.add("task-status-save-btn");
+    saveBtn.addEventListener("click", (e) => e.stopPropagation());
+
     saveBtn.onclick = async () => {
         const newStatus = statusSelect.value;
-
         try {
             await updateTaskStatus(task.id, newStatus);
             task.status = newStatus;
@@ -266,18 +390,26 @@ function createTaskCard(task) {
     statusBar.appendChild(saveBtn);
     details.appendChild(statusBar);
 
+    // archive
+    const archiveBtn = document.createElement("button");
+    archiveBtn.textContent = "Arkivér opgave";
+    archiveBtn.classList.add("subtask-archive-btn");
+    archiveBtn.addEventListener("click", (e) => e.stopPropagation());
+    archiveBtn.onclick = () => archiveTask(task);
+    details.appendChild(archiveBtn);
+
     card.appendChild(details);
 
-    // arkivér task
-    const archiveTaskBtn = document.createElement("button");
-    archiveTaskBtn.textContent = "Arkivér opgave";
-    archiveTaskBtn.classList.add("subtask-archive-btn");
-    archiveTaskBtn.onclick = () => archiveTask(task);
+    // expand/collapse (ikke når man klikker inputs)
+    card.addEventListener("click", (e) => {
+        const isInteractive =
+            e.target.closest("button") ||
+            e.target.closest("input") ||
+            e.target.closest("select") ||
+            e.target.closest("textarea") ||
+            e.target.closest("label");
 
-    card.appendChild(archiveTaskBtn);
-
-    // Toggle expanded class for showing details
-    card.addEventListener("click", () => {
+        if (isInteractive) return;
         card.classList.toggle("expanded");
     });
 
@@ -307,7 +439,7 @@ function renderTasks() {
         });
 }
 
-// ===== DnD SETUP =====
+// ===== DnD =====
 
 function setupDragAndDrop() {
     const colMap = [
@@ -328,7 +460,6 @@ function setupDragAndDrop() {
             const task = tasks.find(t => t.id === draggedTaskId);
             draggedTaskId = null;
             if (!task) return;
-
             if (task.status === status) return;
 
             const oldStatus = task.status;
@@ -346,31 +477,6 @@ function setupDragAndDrop() {
     });
 }
 
-// ===== ARKIVÉR TASK =====
-
-async function archiveTask(task) {
-    if (!confirm("Er du sikker på at du vil arkivere denne opgave?")) return;
-
-    try {
-        const response = await fetch(`/api/tasks/${task.id}/archive?userId=${currentUserId}`, {
-            method: "PATCH"
-        });
-
-        if (!response.ok) {
-            alert("Fejl ved arkivering af opgave");
-            return;
-        }
-
-        const archived = await response.json();
-        task.status = archived.status;
-
-        renderTasks();
-    } catch (err) {
-        console.error("Kunne ikke arkivere:", err);
-        alert("Der opstod en fejl – se console");
-    }
-}
-
-// ===== INIT =====
+// ===== START =====
 
 loadTasks();

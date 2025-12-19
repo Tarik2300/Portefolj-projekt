@@ -92,9 +92,6 @@ body {
     margin-left: auto;
     margin-right: auto;
     box-shadow: 0 3px 6px rgba(0,0,0,0.15);
-}
-
-.task-card {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -113,12 +110,6 @@ body {
     font-style: italic;
     font-size: 0.9rem;
     margin-bottom: 8px;
-}
-
-.subtask-container {
-    margin-top: 8px;
-    margin-bottom: 10px;
-    font-size: 0.85rem;
 }
 
 .task-card:not(.expanded) .task-desc {
@@ -147,6 +138,21 @@ body {
     font-weight: bold;
 }
 
+.task-deadline {
+    font-size: 0.8rem;
+    text-align: center;
+    margin-bottom: 4px;
+    font-weight: normal;
+}
+
+.task-priority {
+    font-size: 0.8rem;
+    text-align: center;
+    margin-bottom: 4px;
+    font-weight: normal;
+}
+
+/* ===== DETAILS (expanded) ===== */
 .task-details {
     display: block;
     max-height: 0;
@@ -162,65 +168,79 @@ body {
     margin-top: 10px;
 }
 
-.task-deadline {
-    font-size: 0.8rem;
-    text-align: center;
-    margin-bottom: 4px;
-    font-weight: normal;
+/* ===== SUBTASKS ===== */
+
+.subtask-container {
+    margin-top: 8px;
+    margin-bottom: 10px;
+    font-size: 0.85rem;
+}
+
+.subtask-header {
+    font-weight: bold;
+    margin-bottom: 6px;
 }
 
 .subtask-row {
-    display: grid;
-    grid-template-columns: 1fr auto auto;
+    display: flex;
     align-items: center;
-    column-gap: 6px;
-    margin-bottom: 4px;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 6px;
 }
 
-.subtask-row span {
+.subtask-left {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    gap: 8px;
+}
+
+.subtask-label {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    max-width: 200px;
 }
 
-.subtask-row select {
+/* dropdown for subtask status */
+.subtask-status-select {
     font-size: 0.8rem;
-    padding: 2px 4px;
+    padding: 2px 6px;
     background-color: #F8E978;
     border: 1px solid #000;
-    border-radius: 5px;
-}
-
-.subtask-archive-btn {
-    padding: 2px 6px;
-    font-size: 0.75rem;
-    cursor: pointer;
-    background-color: #FF9999;
-    border: 1px solid #000;
     border-radius: 6px;
+    font-weight: bold;
 }
 
+/* input + plus */
 .subtask-input-wrapper {
     display: flex;
-    gap: 5px;
+    gap: 6px;
     justify-content: center;
-    margin-top: 5px;
+    align-items: center;
+    margin-top: 6px;
 }
 
 .subtask-input {
     flex: 1;
     font-size: 0.8rem;
-    padding: 3px 5px;
-}
-
-.subtask-add-btn {
-    padding: 2px 6px;
-    font-size: 0.75rem;
-    cursor: pointer;
-    background-color: #C9D2DE;
+    padding: 3px 6px;
     border: 1px solid #000;
     border-radius: 6px;
 }
+
+.subtask-add-btn {
+    padding: 2px 8px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    background-color: #C9D2DE;
+    border: 1px solid #000;
+    border-radius: 8px;
+}
+
+
+/* ===== STATUS BAR ===== */
 
 .task-status-bar {
     margin-top: 12px;
@@ -251,4 +271,17 @@ body {
     border: 2px solid #000;
     border-radius: 10px;
     font-weight: bold;
+}
+
+/* ===== ARCHIVE BUTTON ===== */
+
+.subtask-archive-btn {
+    margin: 8px auto 0 auto;
+    display: block;
+    padding: 3px 10px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    background-color: #FF9999;
+    border: 1px solid #000;
+    border-radius: 8px;
 }

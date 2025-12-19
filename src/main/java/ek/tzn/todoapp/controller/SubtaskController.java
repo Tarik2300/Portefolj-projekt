@@ -2,9 +2,12 @@ package ek.tzn.todoapp.controller;
 
 import ek.tzn.todoapp.dto.request.CreateSubtaskRequest;
 import ek.tzn.todoapp.dto.response.SubtaskResponse;
+import ek.tzn.todoapp.repository.SubtaskRepository;
+import ek.tzn.todoapp.repository.TaskRepository;
 import ek.tzn.todoapp.service.SubtaskService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api")
@@ -39,4 +42,12 @@ public class SubtaskController {
         subtaskService.deleteSubtask(id, userId);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/tasks/{taskId}/subtasks")
+    public java.util.List<SubtaskResponse> getSubtasksForTask(
+            @PathVariable Long taskId,
+            @RequestParam Long userId) {
+        return subtaskService.getSubtasksForTask(taskId, userId);
+    }
+
 }
