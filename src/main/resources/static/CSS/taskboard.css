@@ -4,7 +4,6 @@ body {
     font-family: Arial, sans-serif;
 }
 
-
 .header {
     background-color: #00597A;
     color: white;
@@ -83,7 +82,6 @@ body {
     height: 600px;
 }
 
-
 .task-card {
     background-color: #ffffff;
     border: 2px solid #000;
@@ -150,15 +148,6 @@ body {
 }
 
 .task-details {
-    display: none;
-    margin-top: 10px;
-}
-
-.task-card.expanded .task-details {
-    display: block;
-}
-
-.task-details {
     display: block;
     max-height: 0;
     opacity: 0;
@@ -168,7 +157,7 @@ body {
 }
 
 .task-card.expanded .task-details {
-    max-height: 500px;
+    max-height: 1000px;
     opacity: 1;
     margin-top: 10px;
 }
@@ -197,7 +186,7 @@ body {
 .subtask-row select {
     font-size: 0.8rem;
     padding: 2px 4px;
-    background-color: #F8E978; /* lys gul dropdown */
+    background-color: #F8E978;
     border: 1px solid #000;
     border-radius: 5px;
 }

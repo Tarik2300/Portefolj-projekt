@@ -3,15 +3,16 @@ package ek.tzn.todoapp.service;
 import ek.tzn.todoapp.dto.request.CreateTaskRequest;
 import ek.tzn.todoapp.dto.request.UpdateTaskRequest;
 import ek.tzn.todoapp.dto.response.TaskResponse;
+import ek.tzn.todoapp.entity.Subtask;
 import ek.tzn.todoapp.entity.Task;
 import ek.tzn.todoapp.entity.User;
 import ek.tzn.todoapp.entity.enums.Status;
 import ek.tzn.todoapp.exception.ResourceNotFoundException;
+import ek.tzn.todoapp.exception.UnauthorizedException;
+import ek.tzn.todoapp.exception.ValidationException;
 import ek.tzn.todoapp.repository.TaskRepository;
 import ek.tzn.todoapp.repository.UserRepository;
 import org.springframework.stereotype.Service;
-import ek.tzn.todoapp.exception.UnauthorizedException;
-import ek.tzn.todoapp.entity.Subtask;
 
 import java.util.List;
 
@@ -20,6 +21,8 @@ public class TaskService {
 
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
+
+    private static final List<Status> STATUS_FLOW = List.of(Status.TODO, Status.IN_PROGRESS, Status.DONE);
 
     public TaskService(TaskRepository taskRepository, UserRepository userRepository) {
         this.taskRepository = taskRepository;
@@ -63,6 +66,10 @@ public class TaskService {
     public TaskResponse updateTask(Long id, UpdateTaskRequest request) {
         Task task = findTaskById(id);
 
+        if (task.getStatus() == Status.ARCHIVED) {
+            throw new IllegalStateException("Arkiverede opgaver kan ikke ændres.");
+        }
+
         if (request.getTitle() != null) task.setTitle(request.getTitle());
         if (request.getDescription() != null) task.setDescription(request.getDescription());
         if (request.getPriority() != null) task.setPriority(request.getPriority());
@@ -81,21 +88,56 @@ public class TaskService {
         taskRepository.deleteById(id);
     }
 
-    // OBS: Rettet til at tage currentUserId med og lave check:
     public TaskResponse updateStatus(Long taskId, Status newStatus, Long currentUserId) {
         Task task = findTaskById(taskId);
+
+        if (task.getStatus() == Status.ARCHIVED) {
+            throw new IllegalStateException("Arkiverede opgaver kan ikke ændres.");
+        }
 
         // Ejer-check: kun den bruger, som opgaven er tildelt, må ændre status
         if (!task.getAssignedTo().getId().equals(currentUserId)) {
             throw new UnauthorizedException("Du kan ikke ændre status på en opgave, der ikke er din.");
         }
 
+        // Status-flow validering (Drag & Drop)
+        validateStatusTransition(task.getStatus(), newStatus);
+
         task.setStatus(newStatus);
         return TaskResponse.fromEntity(taskRepository.save(task));
     }
 
+    private void validateStatusTransition(Status from, Status to) {
+        if (to == null) {
+            throw new ValidationException("Status må ikke være null.");
+        }
 
-    // TODO: Tilføj ownership check når auth er implementeret
+        // ARCHIVED må kun ske via /archive endpoint
+        if (to == Status.ARCHIVED) {
+            throw new ValidationException("Brug arkivér-endpointet for at arkivere en opgave.");
+        }
+
+        // Hvis allerede arkiveret, må den ikke flyttes
+        if (from == Status.ARCHIVED) {
+            throw new ValidationException("Du kan ikke ændre status på en arkiveret opgave.");
+        }
+
+        // ingen ændring er ok
+        if (from == to) return;
+
+        int fromIdx = STATUS_FLOW.indexOf(from);
+        int toIdx = STATUS_FLOW.indexOf(to);
+
+        if (fromIdx == -1 || toIdx == -1) {
+            throw new ValidationException("Ugyldigt status-skift.");
+        }
+
+        // kun én kolonne ad gangen (begge retninger)
+        if (Math.abs(toIdx - fromIdx) != 1) {
+            throw new ValidationException("Ugyldigt status-skift: du kan kun flytte en kolonne ad gangen.");
+        }
+    }
+
     public TaskResponse archiveTask(Long taskId, Long currentUserId) {
         Task task = findTaskById(taskId);
 
@@ -114,5 +156,4 @@ public class TaskService {
         task.setStatus(Status.ARCHIVED);
         return TaskResponse.fromEntity(taskRepository.save(task));
     }
-
 }
