@@ -15,6 +15,7 @@ let tasks = [];
 
 // DnD state
 let draggedTaskId = null;
+let dndInitialized = false;
 
 // ===== HJÆLPERE =====
 
@@ -87,7 +88,12 @@ async function loadTasks() {
         }));
 
         renderTasks();
-        setupDragAndDrop(); // (re)bind dropzones
+
+        // Bind DnD events kun én gang (undgår stacked listeners/alerts)
+        if (!dndInitialized) {
+            setupDragAndDrop();
+            dndInitialized = true;
+        }
     } catch (err) {
         console.error("Fejl i loadTasks:", err);
     }
@@ -193,7 +199,7 @@ function createTaskCard(task) {
     task.subtasks.forEach(st => subtaskContainer.appendChild(createSubtaskRow(task, st)));
     details.appendChild(subtaskContainer);
 
-    // ny subtask input
+    // ny subtask input (frontend-only indtil POST endpoint)
     const inputWrapper = document.createElement("div");
     inputWrapper.classList.add("subtask-input-wrapper");
 
@@ -208,7 +214,6 @@ function createTaskCard(task) {
     addBtn.onclick = () => {
         if (!input.value.trim()) return;
 
-        // Frontend-only (indtil I laver POST endpoint)
         task.subtasks.push({
             id: Date.now(),
             description: input.value.trim(),
@@ -217,7 +222,6 @@ function createTaskCard(task) {
 
         input.value = "";
         renderTasks();
-        setupDragAndDrop();
     };
 
     inputWrapper.appendChild(input);
@@ -250,7 +254,6 @@ function createTaskCard(task) {
             await updateTaskStatus(task.id, newStatus);
             task.status = newStatus;
             renderTasks();
-            setupDragAndDrop();
         } catch (err) {
             console.error(err);
             alert("Kunne ikke opdatere task-status");
@@ -302,7 +305,6 @@ function renderTasks() {
 // ===== DnD SETUP =====
 
 function setupDragAndDrop() {
-    // dine columns har id todo-column/inprogress-column/done-column.
     const colMap = [
         { el: document.getElementById("todo-column"), status: Status.TODO },
         { el: document.getElementById("inprogress-column"), status: Status.IN_PROGRESS },
@@ -319,12 +321,10 @@ function setupDragAndDrop() {
             if (!draggedTaskId) return;
 
             const task = tasks.find(t => t.id === draggedTaskId);
+            draggedTaskId = null;
             if (!task) return;
 
-            if (task.status === status) {
-                draggedTaskId = null;
-                return;
-            }
+            if (task.status === status) return;
 
             const oldStatus = task.status;
 
@@ -332,13 +332,10 @@ function setupDragAndDrop() {
                 await updateTaskStatus(task.id, status);
                 task.status = status;
                 renderTasks();
-                setupDragAndDrop();
             } catch (err) {
                 console.error(err);
                 task.status = oldStatus;
                 alert("Kunne ikke flytte task (status blev ikke gemt)");
-            } finally {
-                draggedTaskId = null;
             }
         });
     });
@@ -363,7 +360,6 @@ async function archiveTask(task) {
         task.status = archived.status;
 
         renderTasks();
-        setupDragAndDrop();
     } catch (err) {
         console.error("Kunne ikke arkivere:", err);
         alert("Der opstod en fejl – se console");
