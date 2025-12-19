@@ -8,6 +8,7 @@ const Status = {
 };
 
 const STATUS_FLOW = [Status.TODO, Status.IN_PROGRESS, Status.DONE];
+const PRIORITIES = ["HIGH", "MEDIUM", "LOW"];
 
 // global lister
 let adminTasks = [];
@@ -26,12 +27,9 @@ let filterStatus = null;   // string | null
 async function loadUsers() {
     try {
         const response = await fetch("/api/users");
-        if (!response.ok) {
-            throw new Error("Fejl ved hentning af brugere: " + response.status);
-        }
+        if (!response.ok) throw new Error("Fejl ved hentning af brugere: " + response.status);
 
         const data = await response.json();
-        console.log("ADMIN users:", data);
 
         users = data.map(u => ({
             id: u.id,
@@ -80,12 +78,9 @@ function populateFilterUsers(users) {
 async function loadAdminTasks() {
     try {
         const response = await fetch("/api/tasks");
-        if (!response.ok) {
-            throw new Error("Fejl ved hentning af tasks: " + response.status);
-        }
+        if (!response.ok) throw new Error("Fejl ved hentning af tasks: " + response.status);
 
         const data = await response.json();
-        console.log("ADMIN raw tasks:", data);
 
         adminTasks = data.map(t => ({
             id: t.id,
@@ -172,6 +167,7 @@ async function updateTaskStatus(id, newStatus) {
 async function archiveTask(id) {
     if (!confirm("Er du sikker?")) return;
 
+async function updateTaskInline(id, payload) {
     try {
         const response = await fetch(`/api/tasks/${id}/archive`, { method: "PATCH" });
         if (!response.ok) throw new Error();
@@ -257,6 +253,17 @@ function renderTaskTable() {
     document.querySelectorAll(".archive-btn").forEach(b =>
         b.onclick = e => archiveTask(Number(e.target.dataset.taskId))
     );
+}
+
+// ===== HELPERS =====
+
+function escapeHtml(str) {
+    return String(str ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
 }
 
 // ===== INIT =====
