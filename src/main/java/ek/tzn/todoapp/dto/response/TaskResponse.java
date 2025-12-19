@@ -26,10 +26,7 @@ public record TaskResponse(
                 task.getDeadline(),
                 task.getStatus(),
                 task.getAssignedTo().getId(),
-                task.getSubtasks() == null ? List.of()
-                        : task.getSubtasks().stream()
-                        .map(SubtaskResponse::fromEntity)
-                        .toList()
+                List.of() //
         );
     }
 }
