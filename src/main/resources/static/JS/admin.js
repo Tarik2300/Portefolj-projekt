@@ -17,6 +17,10 @@ let users = [];
 let sortBy = "id";     // "id" | "user" | "priority"
 let sortDir = "asc";   // "asc" | "desc"
 
+// filter state
+let filterUserId = null;   // number | null
+let filterStatus = null;   // string | null
+
 // ===== HENT BRUGERE =====
 
 async function loadUsers() {
@@ -35,8 +39,8 @@ async function loadUsers() {
         }));
 
         populateUserSelect(users);
+        populateFilterUsers(users);
 
-        // render tabellen igen, så "Bruger"-kolonnen kan vise navn + ID
         renderTaskTable();
     } catch (err) {
         console.error("Kunne ikke hente brugere", err);
@@ -48,6 +52,20 @@ function populateUserSelect(users) {
     if (!select) return;
 
     select.innerHTML = '<option value="">Vælg medarbejder...</option>';
+
+    users.forEach(u => {
+        const opt = document.createElement("option");
+        opt.value = u.id;
+        opt.textContent = `${u.name} (ID: ${u.id})`;
+        select.appendChild(opt);
+    });
+}
+
+function populateFilterUsers(users) {
+    const select = document.getElementById("filter-user");
+    if (!select) return;
+
+    select.innerHTML = '<option value="">Alle</option>';
 
     users.forEach(u => {
         const opt = document.createElement("option");
@@ -96,25 +114,20 @@ async function createTaskFromForm(event) {
     const priorityInput = document.getElementById("task-priority");
     const deadlineInput = document.getElementById("task-deadline");
 
-    const assignedToId = Number(userSelect?.value);
-    const title = titleInput?.value.trim();
-    const description = descInput?.value.trim();
-    const priority = priorityInput ? priorityInput.value : null;
-    const deadline = deadlineInput && deadlineInput.value ? deadlineInput.value : null;
+    const assignedToId = Number(userSelect.value);
+    const title = titleInput.value.trim();
+    const description = descInput.value.trim();
+    const priority = priorityInput.value || null;
+    const deadline = deadlineInput.value || null;
 
     if (!assignedToId || !title || !description) {
         alert("Bruger, titel og beskrivelse skal udfyldes.");
         return;
     }
 
-    const payload = {
-        title: title,
-        description: description,
-        assignedToId: assignedToId
-    };
-
+    const payload = { title, description, assignedToId };
     if (priority) payload.priority = priority;
-    if (deadline) payload.deadline = deadline; // yyyy-MM-dd → LocalDate
+    if (deadline) payload.deadline = deadline;
 
     try {
         const response = await fetch("/api/tasks", {
@@ -124,21 +137,18 @@ async function createTaskFromForm(event) {
         });
 
         if (!response.ok) {
-            throw new Error("Fejl ved oprettelse af task: " + response.status);
+            throw new Error("Fejl ved oprettelse af task");
         }
-
-        const created = await response.json();
-        console.log("Oprettet task:", created);
 
         await loadAdminTasks();
         event.target.reset();
     } catch (err) {
         console.error(err);
-        alert("Kunne ikke oprette task. Se console for detaljer.");
+        alert("Kunne ikke oprette task");
     }
 }
 
-// ===== OPDATER & ARKIVÉR TASKS =====
+// ===== OPDATER & ARKIVÉR =====
 
 async function updateTaskStatus(id, newStatus) {
     try {
@@ -148,95 +158,51 @@ async function updateTaskStatus(id, newStatus) {
             body: JSON.stringify({ status: newStatus })
         });
 
-        if (!response.ok) {
-            throw new Error("Fejl ved opdatering af status: " + response.status);
-        }
-
-        const updated = await response.json();
-        console.log("Opdateret task:", updated);
+        if (!response.ok) throw new Error();
 
         const idx = adminTasks.findIndex(t => t.id === id);
-        if (idx !== -1) {
-            adminTasks[idx].status = updated.status;
-        }
+        if (idx !== -1) adminTasks[idx].status = newStatus;
 
         renderTaskTable();
-    } catch (err) {
-        console.error(err);
-        alert("Kunne ikke opdatere status. Se console.");
+    } catch {
+        alert("Kunne ikke opdatere status");
     }
 }
 
 async function archiveTask(id) {
-    if (!confirm("Er du sikker på at du vil arkivere denne task?")) {
-        return;
-    }
+    if (!confirm("Er du sikker?")) return;
 
     try {
-        const response = await fetch(`/api/tasks/${id}/archive`, {
-            method: "PATCH"
-        });
-
-        if (!response.ok) {
-            throw new Error("Fejl ved arkivering af task: " + response.status);
-        }
-
-        const archived = await response.json();
-        console.log("Arkiveret task:", archived);
+        const response = await fetch(`/api/tasks/${id}/archive`, { method: "PATCH" });
+        if (!response.ok) throw new Error();
 
         const idx = adminTasks.findIndex(t => t.id === id);
-        if (idx !== -1) {
-            adminTasks[idx].status = archived.status;
-        }
+        if (idx !== -1) adminTasks[idx].status = Status.ARCHIVED;
 
         renderTaskTable();
-    } catch (err) {
-        console.error(err);
-        alert("Kunne ikke arkivere task. Se console.");
+    } catch {
+        alert("Kunne ikke arkivere task");
     }
 }
 
-// ===== SORTERING =====
+// ===== SORTERING ====
 
 function getUserLabelForSort(assignedToId) {
     const user = users.find(u => u.id === assignedToId);
-    return user ? (user.name || "").toLowerCase() : "";
+    return user ? user.name.toLowerCase() : "";
 }
 
 function priorityRank(p) {
-    switch (p) {
-        case "HIGH": return 3;
-        case "MEDIUM": return 2;
-        case "LOW": return 1;
-        default: return 0;
-    }
+    return p === "HIGH" ? 3 : p === "MEDIUM" ? 2 : p === "LOW" ? 1 : 0;
 }
 
 function getSortedTasks(tasksArr) {
     const dir = sortDir === "asc" ? 1 : -1;
 
     return [...tasksArr].sort((a, b) => {
-        if (sortBy === "id") {
-            return (a.id - b.id) * dir;
-        }
-
-        if (sortBy === "user") {
-            const an = getUserLabelForSort(a.assignedToId);
-            const bn = getUserLabelForSort(b.assignedToId);
-
-            if (an < bn) return -1 * dir;
-            if (an > bn) return 1 * dir;
-
-            // fallback: sortér på ID hvis navne er ens/ukendt
-            return ((a.assignedToId ?? 0) - (b.assignedToId ?? 0)) * dir;
-        }
-
-        if (sortBy === "priority") {
-            const ap = priorityRank(a.priority);
-            const bp = priorityRank(b.priority);
-            return (ap - bp) * dir;
-        }
-
+        if (sortBy === "id") return (a.id - b.id) * dir;
+        if (sortBy === "user") return getUserLabelForSort(a.assignedToId).localeCompare(getUserLabelForSort(b.assignedToId)) * dir;
+        if (sortBy === "priority") return (priorityRank(a.priority) - priorityRank(b.priority)) * dir;
         return 0;
     });
 }
@@ -245,101 +211,79 @@ function getSortedTasks(tasksArr) {
 
 function renderTaskTable() {
     const tbody = document.querySelector("#task-table tbody");
-    if (!tbody) {
-        console.error("Kunne ikke finde <tbody> for task-table");
-        return;
-    }
+    if (!tbody) return;
 
     tbody.innerHTML = "";
 
-    const sortedTasks = getSortedTasks(adminTasks);
+    let filtered = adminTasks;
+
+    if (filterUserId !== null) {
+        filtered = filtered.filter(t => t.assignedToId === filterUserId);
+    }
+
+    if (filterStatus !== null) {
+        filtered = filtered.filter(t => t.status === filterStatus);
+    }
+
+    const sortedTasks = getSortedTasks(filtered);
 
     sortedTasks.forEach(task => {
-        const tr = document.createElement("tr");
-
         const user = users.find(u => u.id === task.assignedToId);
-        const userCellText = user
-            ? `${user.name} (ID: ${user.id})`
-            : (task.assignedToId != null ? `ID: ${task.assignedToId}` : "-");
-
-        const deadlineText = task.deadline ? task.deadline : "-";
+        const tr = document.createElement("tr");
 
         tr.innerHTML = `
             <td>${task.id}</td>
-            <td>${userCellText}</td>
+            <td>${user ? user.name : "-"}</td>
             <td>${task.title}</td>
             <td>${task.description}</td>
             <td>${task.priority ?? "-"}</td>
-            <td>${deadlineText}</td>
+            <td>${task.deadline ?? "-"}</td>
             <td>
                 <select data-task-id="${task.id}" class="status-select">
-                    ${STATUS_FLOW.map(st =>
-            `<option value="${st}" ${task.status === st ? "selected" : ""}>${st}</option>`
-        ).join("")}
-                    <option value="ARCHIVED" ${task.status === Status.ARCHIVED ? "selected" : ""}>ARCHIVED</option>
+                    ${STATUS_FLOW.map(st => `<option ${st === task.status ? "selected" : ""}>${st}</option>`).join("")}
+                    <option ${task.status === Status.ARCHIVED ? "selected" : ""}>ARCHIVED</option>
                 </select>
             </td>
-            <td>
-                <button class="action-btn archive-btn" data-task-id="${task.id}">Arkivér</button>
-            </td>
+            <td><button class="archive-btn" data-task-id="${task.id}">Arkivér</button></td>
         `;
 
         tbody.appendChild(tr);
     });
 
-    // events til status-selects
-    document.querySelectorAll(".status-select").forEach(select => {
-        select.addEventListener("change", e => {
-            const id = Number(e.target.getAttribute("data-task-id"));
-            const newStatus = e.target.value;
-            if (newStatus === Status.ARCHIVED) {
-                archiveTask(id);
-            } else {
-                updateTaskStatus(id, newStatus);
-            }
-        });
-    });
+    document.querySelectorAll(".status-select").forEach(s =>
+        s.onchange = e => updateTaskStatus(Number(e.target.dataset.taskId), e.target.value)
+    );
 
-    // events til arkivér-knapper
-    document.querySelectorAll(".archive-btn").forEach(btn => {
-        btn.addEventListener("click", e => {
-            const id = Number(e.target.getAttribute("data-task-id"));
-            archiveTask(id);
-        });
-    });
+    document.querySelectorAll(".archive-btn").forEach(b =>
+        b.onclick = e => archiveTask(Number(e.target.dataset.taskId))
+    );
 }
 
 // ===== INIT =====
 
 function setupAdminPage() {
-    const form = document.getElementById("create-task-form");
-    if (form) {
-        form.addEventListener("submit", createTaskFromForm);
-    }
+    document.getElementById("create-task-form")?.addEventListener("submit", createTaskFromForm);
 
-    // sort UI
-    const sortBySelect = document.getElementById("sort-by");
-    const sortDirBtn = document.getElementById("sort-dir");
+    document.getElementById("sort-by")?.addEventListener("change", e => {
+        sortBy = e.target.value;
+        renderTaskTable();
+    });
 
-    if (sortBySelect) {
-        sortBySelect.value = sortBy;
-        sortBySelect.addEventListener("change", (e) => {
-            sortBy = e.target.value;
-            renderTaskTable();
-        });
-    }
+    document.getElementById("sort-dir")?.addEventListener("click", e => {
+        sortDir = sortDir === "asc" ? "desc" : "asc";
+        e.target.textContent = sortDir === "asc" ? "Stigende ↑" : "Faldende ↓";
+        renderTaskTable();
+    });
 
-    if (sortDirBtn) {
-        sortDirBtn.dataset.dir = sortDir;
-        sortDirBtn.textContent = (sortDir === "asc") ? "Stigende ↑" : "Faldende ↓";
+    document.getElementById("filter-user")?.addEventListener("change", e => {
+        filterUserId = e.target.value ? Number(e.target.value) : null;
+        renderTaskTable();
+    });
 
-        sortDirBtn.addEventListener("click", () => {
-            sortDir = (sortDir === "asc") ? "desc" : "asc";
-            sortDirBtn.dataset.dir = sortDir;
-            sortDirBtn.textContent = (sortDir === "asc") ? "Stigende ↑" : "Faldende ↓";
-            renderTaskTable();
-        });
-    }
+    document.getElementById("filter-status")?.addEventListener("change", e => {
+        filterStatus = e.target.value || null;
+        renderTaskTable();
+    });
 
     loadUsers();
     loadAdminTasks();
