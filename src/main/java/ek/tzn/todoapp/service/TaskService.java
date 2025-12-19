@@ -66,6 +66,10 @@ public class TaskService {
     public TaskResponse updateTask(Long id, UpdateTaskRequest request) {
         Task task = findTaskById(id);
 
+        if (task.getStatus() == Status.ARCHIVED) {
+            throw new IllegalStateException("Arkiverede opgaver kan ikke ændres.");
+        }
+
         if (request.getTitle() != null) task.setTitle(request.getTitle());
         if (request.getDescription() != null) task.setDescription(request.getDescription());
         if (request.getPriority() != null) task.setPriority(request.getPriority());
@@ -86,6 +90,10 @@ public class TaskService {
 
     public TaskResponse updateStatus(Long taskId, Status newStatus, Long currentUserId) {
         Task task = findTaskById(taskId);
+
+        if (task.getStatus() == Status.ARCHIVED) {
+            throw new IllegalStateException("Arkiverede opgaver kan ikke ændres.");
+        }
 
         // Ejer-check: kun den bruger, som opgaven er tildelt, må ændre status
         if (!task.getAssignedTo().getId().equals(currentUserId)) {
